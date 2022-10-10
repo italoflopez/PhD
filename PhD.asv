@@ -1,0 +1,4 @@
+%bla
+yield_data=xlsread("C:\Users\Italo\Documents\PhD\PhD\USD Zero Coupon Yields.xlsx")
+macro_data=readtable("C:\Users\Italo\Documents\PhD\PhD\final_macro_data.csv")
+
