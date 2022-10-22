@@ -1,10 +1,7 @@
-library(ROracle)
-library(keyring)
 library(forecast)
 library(zoo)
 library(tseries)
 library(vars)
-library(portes)
 library(plotly)
 library(quantmod)
 library(Metrics)
@@ -13,7 +10,6 @@ library(rugarch)
 library(zoo)
 library(tis)
 library(forecast)
-library(astsa)
 library(plotly)
 library(quantmod)
 library(sarima)
@@ -887,8 +883,132 @@ data_updated[,43]%>%log()%>%diff()%>%pp.test()
 
 dollar_pound_stationary <- data_updated[,43]%>%log()%>%diff()*100
 
+
 data_stationary <- merge(data_stationary,dollar_pound_stationary)
 colnames(data_stationary)[43]<-colnames(data_updated)[43]
+
+colnames(data_updated)[44]
+
+plotly_simple(data_updated[,44],colnames(data_updated)[44])
+data_updated[,44]%>%adf.test()
+data_updated[,44]%>%kpss.test()
+data_updated[,44]%>%pp.test()
+
+colnames(data_updated)[45]
+
+plotly_simple(data_updated[,45],colnames(data_updated)[45])
+data_updated[,45]%>%adf.test()
+data_updated[,45]%>%kpss.test()
+data_updated[,45]%>%pp.test()
+
+data_updated[,45]%>%diff()
+plotly_simple(data_updated[,45]%>%diff(),colnames(data_updated)[45])
+
+data_updated[,45]%>%diff()%>%adf.test()
+data_updated[,45]%>%diff()%>%kpss.test()
+data_updated[,45]%>%diff()%>%pp.test()
+
+aaa_corporate_stationary <- data_updated[,45]%>%diff()
+
+
+data_stationary <- merge(data_stationary,aaa_corporate_stationary)
+colnames(data_stationary)[44]<-colnames(data_updated)[45]
+
+colnames(data_updated)[46]
+
+plotly_simple(data_updated[,46],colnames(data_updated)[46])
+data_updated[,46]%>%adf.test()
+data_updated[,46]%>%kpss.test()
+data_updated[,46]%>%pp.test()
+
+data_updated[,46]%>%diff()
+plotly_simple(data_updated[,46]%>%diff(),colnames(data_updated)[46])
+
+data_updated[,46]%>%diff()%>%adf.test()
+data_updated[,46]%>%diff()%>%kpss.test()
+data_updated[,46]%>%diff()%>%pp.test()
+
+baa_corporate_stationary <- data_updated[,46]%>%diff()
+
+
+data_stationary <- merge(data_stationary,baa_corporate_stationary)
+colnames(data_stationary)[45]<-colnames(data_updated)[46]
+
+colnames(data_updated)[47]
+
+plotly_simple(data_updated[,47],colnames(data_updated)[47])
+data_updated[,47]%>%adf.test()
+data_updated[,47]%>%kpss.test()
+data_updated[,47]%>%pp.test()
+
+data_updated[,47]%>%log()%>%diff()
+plotly_simple(data_updated[,47]%>%log()%>%diff(),colnames(data_updated)[47])
+
+data_updated[,47]%>%log()%>%diff()%>%adf.test()
+data_updated[,47]%>%log()%>%diff()%>%kpss.test()
+data_updated[,47]%>%log()%>%diff()%>%pp.test()
+
+m1_stationary <- data_updated[,47]%>%log()%>%diff()*100
+
+data_stationary <- merge(data_stationary,m1_stationary)
+colnames(data_stationary)[46]<-colnames(data_updated)[47]
+
+colnames(data_updated)[48]
+
+plotly_simple(data_updated[,48],colnames(data_updated)[48])
+data_updated[,48]%>%adf.test()
+data_updated[,48]%>%kpss.test()
+data_updated[,48]%>%pp.test()
+
+data_updated[,48]%>%log()%>%diff()
+plotly_simple(data_updated[,48]%>%log()%>%diff(),colnames(data_updated)[48])
+
+data_updated[,48]%>%log()%>%diff()%>%adf.test()
+data_updated[,48]%>%log()%>%diff()%>%kpss.test()
+data_updated[,48]%>%log()%>%diff()%>%pp.test()
+
+cpi_stationary <- data_updated[,48]%>%log()%>%diff()*100
+
+data_stationary <- merge(data_stationary,cpi_stationary)
+colnames(data_stationary)[47]<-colnames(data_updated)[48]
+
+colnames(data_updated)[49]
+
+plotly_simple(data_updated[,49],colnames(data_updated)[49])
+data_updated[,49]%>%adf.test()
+data_updated[,49]%>%kpss.test()
+data_updated[,49]%>%pp.test()
+
+data_updated[,49]%>%log()%>%diff()
+plotly_simple(data_updated[,49]%>%log()%>%diff(),colnames(data_updated)[49])
+
+data_updated[,49]%>%log()%>%diff()%>%adf.test()
+data_updated[,49]%>%log()%>%diff()%>%kpss.test()
+data_updated[,49]%>%log()%>%diff()%>%pp.test()
+
+m2_stationary <- data_updated[,49]%>%log()%>%diff()*100
+
+data_stationary <- merge(data_stationary,m2_stationary)
+colnames(data_stationary)[48]<-colnames(data_updated)[49]
+
+colnames(data_updated)[50]
+
+plotly_simple(data_updated[,50],colnames(data_updated)[50])
+data_updated[,50]%>%adf.test()
+data_updated[,50]%>%kpss.test()
+data_updated[,50]%>%pp.test()
+
+data_updated[,50]%>%log()%>%diff()
+plotly_simple(data_updated[,50]%>%log()%>%diff(),colnames(data_updated)[50])
+
+data_updated[,50]%>%log()%>%diff()%>%adf.test()
+data_updated[,50]%>%log()%>%diff()%>%kpss.test()
+data_updated[,50]%>%log()%>%diff()%>%pp.test()
+
+reser_depo_ins_stationary <- data_updated[,50]%>%log()%>%diff()*100
+
+data_stationary <- merge(data_stationary,reser_depo_ins_stationary)
+colnames(data_stationary)[49]<-colnames(data_updated)[50]
 
 data_stationary <- data_stationary[complete.cases(data_stationary),]
 
@@ -896,8 +1016,17 @@ data_transformed <- scale(data_stationary)
 colMeans(data_transformed)
 sapply(data_transformed, sd)
 
-final_data <- sapply(data_transformed, ts_clean_vec)
+final_data <- sapply(data_transformed, ts_clean_vec,period=12)
 final_data <- as.zoo(final_data)
 index(final_data) <- index(data_transformed)
 final_data
 final_data%>%tail(20)
+
+final_data%>%colMeans()
+
+sapply(final_data, sd)
+
+write.csv(data_transformed,"standardize_macro_data.csv")
+
+write.csv(ffr,"ffr.csv")
+

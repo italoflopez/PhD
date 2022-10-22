@@ -1,10 +1,7 @@
-library(ROracle)
-library(keyring)
 library(forecast)
 library(zoo)
 library(tseries)
 library(vars)
-library(portes)
 library(plotly)
 library(quantmod)
 library(matrixStats)
@@ -434,3 +431,94 @@ colnames(pound) <- "U.S. Dollars to U.K. Pound Sterling Spot Exchange Rate"
 index(pound) <- as.yearmon(index(pound))
 
 data <- merge(data,pound)
+
+ffr <- quantmod::getSymbols("DFF",src='FRED')
+ffr <- DFF
+ffr   <- as.zoo(ffr)
+ffr <- aggregate(ffr,as.yearmon,mean,
+                   na.rm=T)
+plotly_simple(ffr,"Effective Federal Funds Rate")
+plot(ffr)
+colnames(ffr) <- "Effective Federal Funds Rate"
+index(ffr) <- as.yearmon(index(ffr))
+
+data <- merge(data,ffr)
+
+
+aaa_corporate <- quantmod::getSymbols("DAAA",src='FRED')
+aaa_corporate <- DAAA
+aaa_corporate   <- as.zoo(aaa_corporate)
+aaa_corporate <- aggregate(aaa_corporate,as.yearmon,mean,
+                 na.rm=T)
+
+plotly_simple(aaa_corporate," Moody's Seasoned Aaa Corporate Bond Yield")
+plot(aaa_corporate)
+colnames(aaa_corporate) <- "Moody's Seasoned Aaa Corporate Bond Yield"
+index(aaa_corporate) <- as.yearmon(index(aaa_corporate))
+
+data <- merge(data,aaa_corporate)
+
+baa_corporate <- quantmod::getSymbols("DBAA",src='FRED')
+baa_corporate <- DBAA
+baa_corporate   <- as.zoo(baa_corporate)
+baa_corporate <- aggregate(baa_corporate,as.yearmon,mean,
+                           na.rm=T)
+
+plotly_simple(baa_corporate," Moody's Seasoned Baa Corporate Bond Yield")
+plot(baa_corporate)
+colnames(baa_corporate) <- "Moody's Seasoned Baa Corporate Bond Yield"
+index(baa_corporate) <- as.yearmon(index(baa_corporate))
+
+data <- merge(data,baa_corporate)
+
+m1 <- quantmod::getSymbols("WM1NS",src='FRED')
+m1 <- WM1NS
+m1 <- as.zoo(m1)
+m1 <- aggregate(m1,as.yearmon,mean,
+                           na.rm=T)
+
+plotly_simple(m1,"M1")
+plot(m1)
+colnames(m1) <- "M1"
+index(m1) <- as.yearmon(index(m1))
+
+data <- merge(data,m1)
+
+cpi <- quantmod::getSymbols("CPIAUCSL",src='FRED')
+cpi <- CPIAUCSL
+cpi <- as.zoo(cpi)
+cpi <- aggregate(cpi,as.yearmon,mean,
+                na.rm=T)
+
+plotly_simple(cpi,"CPI")
+plot(cpi)
+colnames(cpi) <- "CPI"
+index(cpi) <- as.yearmon(index(cpi))
+
+data <- merge(data,cpi)
+
+m2 <- quantmod::getSymbols("WM2NS",src='FRED')
+m2 <- WM2NS
+m2 <- as.zoo(m2)
+m2 <- aggregate(m2,as.yearmon,mean,
+                na.rm=T)
+
+plotly_simple(m2,"M2")
+plot(m2)
+colnames(m2) <- "M2"
+index(m2) <- as.yearmon(index(m2))
+
+data <- merge(data,m2)
+
+reser_depo_ins_total <- quantmod::getSymbols("TOTRESNS",src='FRED')
+reser_depo_ins_total <- TOTRESNS
+reser_depo_ins_total <- as.zoo(reser_depo_ins_total)
+reser_depo_ins_total <- aggregate(reser_depo_ins_total,as.yearmon,mean,
+                na.rm=T)
+
+plotly_simple(reser_depo_ins_total,"Reserves of Depository Institutions: Tota")
+plot(reser_depo_ins_total)
+colnames(reser_depo_ins_total) <- "Reserves of Depository Institutions: Tota"
+index(reser_depo_ins_total) <- as.yearmon(index(reser_depo_ins_total))
+
+data <- merge(data,reser_depo_ins_total)
