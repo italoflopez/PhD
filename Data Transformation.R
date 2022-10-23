@@ -1026,6 +1026,8 @@ final_data%>%colMeans()
 
 sapply(final_data, sd)
 
+setwd("C://Users//Italo//Documents//PhD//PhD//First")
+
 write.csv(data_transformed,"standardize_macro_data.csv")
 
 write.csv(ffr,"ffr.csv")
