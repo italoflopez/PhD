@@ -1028,7 +1028,7 @@ sapply(final_data, sd)
 
 setwd("C://Users//Italo//Documents//PhD//PhD//First")
 
-write.csv(data_transformed,"standardize_macro_data.csv")
+write.csv(as.data.frame(data_transformed),"standardize_macro_data.csv")
 
-write.csv(ffr,"ffr.csv")
+write.csv(as.data.frame(ffr),"ffr.csv")
 
