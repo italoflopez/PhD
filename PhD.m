@@ -93,11 +93,11 @@ diag(D_slow/sum(diag(D_slow)))*100;
 diag(D_fast/sum(diag(D_fast)))*100;
 %factor loadings of slow factors on slow moving variables
 for i=1:size(slow_moving_variables,2)
-slow_factor_loadings(:,i)=inv(ft_slow'*ft_slow)*ft_slow'*table2array(slow_moving_variables(:,i));
+slow_factor_loadings(:,i)=inv(table2rray(ft_slow)'*table2array(ft_slow))*table2array(ft_slow)'*table2array(slow_moving_variables(:,i));
 end
 %factor loadings of fast factors on macro variables
 for i=1:size(macro_data,2)
-fast_factor_loadings(:,i)=inv(ft_fast'*ft_fast)*ft_fast'*table2array(macro_data(:,i));
+fast_factor_loadings(:,i)=inv(table2array(ft_fast)'*table2array(ft_fast))*table2array(ft_fast)'*table2array(macro_data(:,i));
 end
 %slow factors with name normalization
 ft_slow_name=table2array(ft_slow)*slow_factor_loadings(:,1:2);
@@ -114,4 +114,23 @@ factors=rmmissing(factors);
 
 Mdl = varm(8,2);
 EstMdl = estimate(Mdl,factors);
+var=summarize(EstMdl)
+resid_covariance=var.Covariance;
+H=chol(resid_covariance,'lower')*diag(diag(chol(resid_covariance,'lower')).^2)^(-1/2);
+E = infer(EstMdl,factors);
 
+fast_and_slow_variables=[slow_moving_variables fast_moving_variables];
+r=zeros(size(fast_and_slow_variables,2),1);
+
+b=ones(size(slow_moving_variables,2),1);
+a=zeros(size(slow_moving_variables,2),2);
+c=ones(size(slow_moving_variables,2),5);
+f=zeros(size(fast_moving_variables,2),8);
+R=[a b c;f];
+
+for i=1:size(fast_and_slow_variables,2)
+observation_equation_factor_loadings(:,i)=inv(table2array(factors)'*table2array(factors))*table2array(factors)'*table2array(fast_and_slow_variables(:,i));
+end
+
+P=R*inv(table2array(factors)'*table2array(factors))*R';
+factor_loadings_with_restrictions=observation_equation_factor_loadings*-inv(table2array(factors)'*table2array(factors))*R'*inv(P)*(R*observation_equation_factor_loadings-r);
