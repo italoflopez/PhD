@@ -15,6 +15,7 @@ library(quantmod)
 library(sarima)
 library(pracma)
 
+
 # Time Series ML
 library(tidymodels)
 library(modeltime)
@@ -1013,6 +1014,7 @@ colnames(data_stationary)[49]<-colnames(data_updated)[50]
 data_stationary <- data_stationary[complete.cases(data_stationary),]
 
 data_transformed <- scale(data_stationary)
+index(data_transformed)<-as.Date(index(data_transformed))
 colMeans(data_transformed)
 sapply(data_transformed, sd)
 
@@ -1029,6 +1031,8 @@ sapply(final_data, sd)
 setwd("C://Users//Italo//Documents//PhD//PhD//First")
 
 write.csv(as.data.frame(data_transformed),"standardize_macro_data.csv")
+index(ffr)<-as.Date(index(ffr))
 
 write.csv(as.data.frame(ffr),"ffr.csv")
+
 
