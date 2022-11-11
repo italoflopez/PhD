@@ -133,4 +133,17 @@ observation_equation_factor_loadings(:,i)=inv(table2array(factors)'*table2array(
 end
 
 P=R*inv(table2array(factors)'*table2array(factors))*R';
-factor_loadings_with_restrictions=observation_equation_factor_loadings*-inv(table2array(factors)'*table2array(factors))*R'*inv(P)*(R*observation_equation_factor_loadings-r);
+factor_loadings_with_restrictions=observation_equation_factor_loadings-inv(table2array(factors)'*table2array(factors))*R'*inv(P)*(R*observation_equation_factor_loadings-r);
+
+small_R=[0 0 1 0 0 0 0 0;
+         0 0 0 1 0 0 0 0;
+         0 0 0 0 1 0 0 0;
+         0 0 0 0 0 1 0 0;
+         0 0 0 0 0 0 1 0;
+         0 0 0 0 0 0 0 1];
+small_r=[0;0;0;0;0;0];
+small_P=small_R*inv(table2array(factors)'*table2array(factors))*small_R';
+
+for i=1:size(slow_moving_variables,2)
+small_factor_loadings_with_restrictions(:,i)=observation_equation_factor_loadings(:,i)-inv(table2array(factors)'*table2array(factors))*small_R'*inv(small_P)*(small_R*observation_equation_factor_loadings(:,i)-small_r);
+end
