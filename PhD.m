@@ -147,3 +147,24 @@ small_P=small_R*inv(table2array(factors)'*table2array(factors))*small_R';
 for i=1:size(slow_moving_variables,2)
 small_factor_loadings_with_restrictions(:,i)=observation_equation_factor_loadings(:,i)-inv(table2array(factors)'*table2array(factors))*small_R'*inv(small_P)*(small_R*observation_equation_factor_loadings(:,i)-small_r);
 end
+
+A_companion_form =[EstMdl.AR{1, 1}, EstMdl.AR{1, 2}; eye(8) zeros(8)];
+eig_companion_form=eig(A_companion_form);
+abs(eig_companion_form)
+
+C(1:8,1:8)=eye(8);
+
+for i=1:59
+    bla=A_companion_form^i
+C(1:8,(8*i+1):(8*(i+1)))=bla(1:8,1:8);
+end
+
+inv_H=inv(H);
+B(1:8,1:8)=inv_H;
+
+for i=1:59
+B(1:8,(8*i+1):(8*(i+1)))=C(1:8,(8*i+1):(8*(i+1)))*inv_H;
+end
+
+yields_loadings=[zeros(15,5), ns_factor_loadings];
+complete_observation_equation_factor_loadings=[observation_equation_factor_loadings, yields_loadings'];
