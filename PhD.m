@@ -168,3 +168,4 @@ end
 
 yields_loadings=[zeros(15,5), ns_factor_loadings];
 complete_observation_equation_factor_loadings=[observation_equation_factor_loadings, yields_loadings'];
+observed_variables_irf=complete_observation_equation_factor_loadings'*B;
