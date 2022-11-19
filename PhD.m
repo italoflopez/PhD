@@ -169,3 +169,28 @@ end
 yields_loadings=[zeros(15,5), ns_factor_loadings];
 complete_observation_equation_factor_loadings=[observation_equation_factor_loadings, yields_loadings'];
 observed_variables_irf=complete_observation_equation_factor_loadings'*B;
+
+model_data=synchronize(macro_data,yield_data);
+model_data=rmmissing(model_data);
+
+yield_data.Var1(2:size(yield_data.Var1,1));
+diff(table2array(yield_data,1));
+diff_yield_data=array2table(diff(table2array(yield_data,1)));
+diff_yield_data.Properties.VariableNames=yield_data.Properties.VariableNames;
+yield_data.Properties.VariableNames;
+diff_yield_data=table2timetable([table(yield_data.Var1(2:size(yield_data.Var1,1))), diff_yield_data]);
+
+bootstrap_model_data=synchronize(macro_data,diff_yield_data);
+bootstrap_model_data=rmmissing(bootstrap_model_data);
+
+v = [1:1:234];
+window_size = 13;
+iCount = size(v,2);
+iStartIDx = [1:window_size :iCount];
+for iLoop=1:length(iStartIDx)-1
+    segment{iLoop} = v(iStartIDx(iLoop):iStartIDx(iLoop+1)-1);
+end
+segment{18}=222:234;
+segment{19}=235:241;
+
+random_hs=randi([1 19],19,1000);
