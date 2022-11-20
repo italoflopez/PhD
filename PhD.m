@@ -132,8 +132,8 @@ for i=1:size(fast_and_slow_variables,2)
 observation_equation_factor_loadings(:,i)=inv(table2array(factors)'*table2array(factors))*table2array(factors)'*table2array(fast_and_slow_variables(:,i));
 end
 
-P=R*inv(table2array(factors)'*table2array(factors))*R';
-factor_loadings_with_restrictions=observation_equation_factor_loadings-inv(table2array(factors)'*table2array(factors))*R'*inv(P)*(R*observation_equation_factor_loadings-r);
+%P=R*inv(table2array(factors)'*table2array(factors))*R';
+%factor_loadings_with_restrictions=observation_equation_factor_loadings-inv(table2array(factors)'*table2array(factors))*R'*inv(P)*(R*observation_equation_factor_loadings-r);
 
 small_R=[0 0 1 0 0 0 0 0;
          0 0 0 1 0 0 0 0;
@@ -193,4 +193,26 @@ end
 segment{18}=222:234;
 segment{19}=235:241;
 
-random_hs=randi([1 19],19,1000);
+random_hs=randi([1 18],18,1000);
+random_hs_left=randi([1 19],1,1000);
+for i=1:1000
+    if (random_hs_left(i)~=1)&&(random_hs_left(i)~=19);
+    random_hs_final(:,i) = [random_hs(1:(random_hs_left(i)-1),i); 19; random_hs((random_hs_left(i)):end,i)];
+    elseif (random_hs_left(i)==1) 
+     random_hs_final(:,i) = [19; random_hs(:,i)];
+    else 
+             random_hs_final(:,i) = [random_hs(:,i); 19];
+    end
+end
+
+random_hs=random_hs_final;
+stationary_bootstrap_model_data{1}=table2array(bootstrap_model_data(segment{random_hs(1,1)},:));
+for i=2:1000
+stationary_bootstrap_model_data{i}=table2array(bootstrap_model_data(segment{random_hs(1,i)},:));
+end
+for i=2:19
+    for j=1:1000
+stationary_bootstrap_model_data{j} = cat(1,stationary_bootstrap_model_data{j},table2array(bootstrap_model_data(segment{random_hs(i,1)},:)));
+    end
+end
+
