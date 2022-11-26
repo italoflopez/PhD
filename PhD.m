@@ -182,6 +182,7 @@ diff_yield_data=table2timetable([table(yield_data.Var1(2:size(yield_data.Var1,1)
 
 bootstrap_model_data=synchronize(macro_data,diff_yield_data);
 bootstrap_model_data=rmmissing(bootstrap_model_data);
+diff_yield_data=bootstrap_model_data(:,50:64);
 
 v = [1:1:234];
 window_size = 13;
@@ -212,7 +213,17 @@ stationary_bootstrap_model_data{i}=table2array(bootstrap_model_data(segment{rand
 end
 for i=2:19
     for j=1:1000
-stationary_bootstrap_model_data{j} = cat(1,stationary_bootstrap_model_data{j},table2array(bootstrap_model_data(segment{random_hs(i,1)},:)));
+stationary_bootstrap_model_data{j} = cat(1,stationary_bootstrap_model_data{j},table2array(bootstrap_model_data(segment{random_hs(i,j)},:)));
     end
 end
 
+for i=1:1000
+    bootstrap_yield_data{i}=table2array(model_data(1,50:64))+cumsum(stationary_bootstrap_model_data{i}(2:240,50:64));
+end
+
+clear bootstrap_model_data
+for i=1:1000
+bootstrap_model_data{i}=cat(2,stationary_bootstrap_model_data{i}(3:241,1:49),bootstrap_yield_data{i});
+end
+
+%bla=[model_data.I02503MIndex, diff_yield_data.I02503MIndex, cumsum(diff_yield_data.I02503MIndex)];
