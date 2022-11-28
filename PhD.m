@@ -4,7 +4,7 @@ yield_data=yield_data(3:height(yield_data),:);
 %yield_data=table2timetable(yield_data);
 t1 = datetime(1989,3,1);
 t2 = datetime(2022,6,1);
-t = t1:calmonths(1):t2
+t = t1:calmonths(1):t2;
 yield_data=table2timetable([table(datetime(t','Format','yyyyMM')), yield_data(:,2:size(yield_data,2))]);
 %macro_data=readtable("C:\Users\Italo\Documents\PhD\PhD\final_macro_data.csv");
 lambda=0.0609;
@@ -93,7 +93,7 @@ diag(D_slow/sum(diag(D_slow)))*100;
 diag(D_fast/sum(diag(D_fast)))*100;
 %factor loadings of slow factors on slow moving variables
 for i=1:size(slow_moving_variables,2)
-slow_factor_loadings(:,i)=inv(table2rray(ft_slow)'*table2array(ft_slow))*table2array(ft_slow)'*table2array(slow_moving_variables(:,i));
+slow_factor_loadings(:,i)=inv(table2array(ft_slow)'*table2array(ft_slow))*table2array(ft_slow)'*table2array(slow_moving_variables(:,i));
 end
 %factor loadings of fast factors on macro variables
 for i=1:size(macro_data,2)
@@ -155,7 +155,7 @@ abs(eig_companion_form)
 C(1:8,1:8)=eye(8);
 
 for i=1:59
-    bla=A_companion_form^i
+    bla=A_companion_form^i;
 C(1:8,(8*i+1):(8*(i+1)))=bla(1:8,1:8);
 end
 
@@ -227,3 +227,75 @@ bootstrap_model_data{i}=cat(2,stationary_bootstrap_model_data{i}(3:241,1:49),boo
 end
 
 %bla=[model_data.I02503MIndex, diff_yield_data.I02503MIndex, cumsum(diff_yield_data.I02503MIndex)];
+ffr=rmmissing(synchronize(model_data,ffr));
+ffr=table2array(ffr(3:241,size(ffr,2)));
+irf=irf_function(bootstrap_model_data{1}(:,50:64),bootstrap_model_data{1}(:,1:49),ffr);
+%first try of irf inference
+for i=1:1000;
+irf{i}=irf_function(bootstrap_model_data{i}(:,50:64),bootstrap_model_data{i}(:,1:49),ffr);
+end
+ffr=readtable("C:\Users\Italo\Documents\PhD\PhD\ffr.csv");
+ffr=table2timetable([table(datetime(char(ffr{:,1}),'Format','yyyyMM')), ffr(:,2:size(ffr,2))]);
+ffr=rmmissing(synchronize(model_data,ffr));
+ffr=table2array(ffr(:,size(ffr,2)));
+
+%now ffr bootstrap samples
+diff_ffr=diff(ffr);
+
+v = [1:1:234];
+window_size = 13;
+iCount = size(v,2);
+iStartIDx = [1:window_size :iCount];
+for iLoop=1:length(iStartIDx)-1
+    segment{iLoop} = v(iStartIDx(iLoop):iStartIDx(iLoop+1)-1);
+end
+segment{18}=222:234;
+segment{19}=235:240;
+
+stationary_ffr_data{1}=diff_ffr(segment{random_hs(1,1)},:);
+for i=2:1000
+stationary_ffr_data{i}=diff_ffr(segment{random_hs(1,i)},:);
+end
+for i=2:19
+    for j=1:1000
+stationary_ffr_data{j} = cat(1,stationary_ffr_data{j},diff_ffr(segment{random_hs(i,j)},:));
+    end
+end
+
+for i=1:1000
+    bootstrap_ffr_data{i}=ffr(1)+cumsum(stationary_ffr_data{i}(2:240));
+end
+
+for i=1:1000;
+irf{i}=irf_function(bootstrap_model_data{i}(:,50:64),bootstrap_model_data{i}(:,1:49),bootstrap_ffr_data{i});
+end
+
+observed_variables_irf=observed_variables_irf(:,1:120);
+
+for i=1:1000;
+irf{i}=irf{i}(:,1:120);
+end
+
+fun = @(x) quantile(x,0.025); % add 20 to each element inside the cell
+output = cellfun(@(x) fun(x),irf,'uniformoutput',false)
+
+bla = [irf{:}];
+bla(1,(1:999)*120+1);
+quantile(bla(1,(1:999)*120+1),0.025);
+quantile(bla(1,(1:999)*120+1),0.975);
+quantile(bla(1,(1:999)*120+1),0.1);
+quantile(bla(1,(1:999)*120+1),0.9);
+quantile(bla(1,(1:999)*120+2),0.025);
+quantile(bla(1,(1:999)*120+2),0.975);
+quantile(bla(1,(1:999)*120+2),0.1);
+quantile(bla(1,(1:999)*120+2),0.9);
+func = @(x,y) quantile(x,y=0.1);
+splitapply(func,bla(1,:),120);
+
+for i=1:120
+bla_bla(i)=quantile(bla(1,(1:999)*120+i),0.025);
+end
+
+for i=1:120
+bla_bla2(i)=quantile(bla(1,(1:999)*120+i),0.975);
+end
