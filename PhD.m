@@ -45,7 +45,7 @@ common_component=(big_lambda*ft')';
 idiosyncratic_error=table2array(macro_data)-common_component;
 %macro factor loadings by OLS
 for i=1:size(macro_data,2)
-macro_factor_loadings(:,i)=inv(ft'*ft)*ft'*table2array(macro_data(:,i));
+macro_factor_loadings(:,i)=inv(ft'*ft)*ft'*table2array(macro_data(:,i))/sqrt(height(macro_data));
 end
 %common component
 common_component=ft*macro_factor_loadings;
@@ -86,19 +86,25 @@ big_lambda_fast=big_lambda_fast(:,[2 1]);
 ft_slow=table2array(slow_moving_variables)*big_lambda_slow/height(slow_moving_variables);
 ft_slow=table2timetable([table(datetime(slow_moving_variables.Var1,'Format','yyyyMM')), array2table(ft_slow)]);
 ft_fast=table2array(fast_moving_variables)*big_lambda_fast/height(fast_moving_variables);
-ft_fast=table2timetable([table(datetime(fast_moving_variables.Var1,'Format','yyyyMM')), array2table(ft_fast)]);
+ft_fast=table2timetable([table(datetime(fast_moving_variables.Var1,'Format','y
+%factor loadings of slow factors on slow moving variables
+for i=1:size(slow_moving_variables,2)
+slow_factor_loadings(:,i)=inv(table2array(ft_slow)'*table2array(ft_slow))*table2array(ft_slow)'*table2array(slow_moving_variables(:,i))/sqrt(height(ft_slow));
+end
 
+
+%some checks
+slow_factor_loadings*slow_factor_loadings'/height(ft_slow);
 diag(D_slow/sum(diag(D_slow)))*100;
 
 diag(D_fast/sum(diag(D_fast)))*100;
-%factor loadings of slow factors on slow moving variables
-for i=1:size(slow_moving_variables,2)
-slow_factor_loadings(:,i)=inv(table2array(ft_slow)'*table2array(ft_slow))*table2array(ft_slow)'*table2array(slow_moving_variables(:,i));
-end
 %factor loadings of fast factors on macro variables
 for i=1:size(macro_data,2)
-fast_factor_loadings(:,i)=inv(table2array(ft_fast)'*table2array(ft_fast))*table2array(ft_fast)'*table2array(macro_data(:,i));
+fast_factor_loadings(:,i)=inv(table2array(ft_fast)'*table2array(ft_fast))*table2array(ft_fast)'*table2array(macro_data(:,i))/sqrt(height(ft_fast));
 end
+%some checks
+fast_factor_loadings*fast_factor_loadings'/height(ft_fast);
+
 %slow factors with name normalization
 ft_slow_name=table2array(ft_slow)*slow_factor_loadings(:,1:2);
 ft_slow_name=table2timetable([table(datetime(slow_moving_variables.Var1,'Format','yyyyMM')), array2table(ft_slow_name)]);
@@ -135,26 +141,35 @@ end
 %P=R*inv(table2array(factors)'*table2array(factors))*R';
 %factor_loadings_with_restrictions=observation_equation_factor_loadings-inv(table2array(factors)'*table2array(factors))*R'*inv(P)*(R*observation_equation_factor_loadings-r);
 
-small_R=[0 0 1 0 0 0 0 0;
-         0 0 0 1 0 0 0 0;
-         0 0 0 0 1 0 0 0;
-         0 0 0 0 0 1 0 0;
-         0 0 0 0 0 0 1 0;
-         0 0 0 0 0 0 0 1];
-small_r=[0;0;0;0;0;0];
-small_P=small_R*inv(table2array(factors)'*table2array(factors))*small_R';
+% small_R=[0 0 1 0 0 0 0 0;
+%          0 0 0 1 0 0 0 0;
+%          0 0 0 0 1 0 0 0;
+%          0 0 0 0 0 1 0 0;
+%          0 0 0 0 0 0 1 0;
+%          0 0 0 0 0 0 0 1];
+small_R=eye(8);
+small_r=eye(8);
+for i=1:8
+small_P(i)=small_R(i,:)*inv(table2array(factors)'*table2array(factors))*small_R(i,:)';
+end 
 
-for i=1:size(slow_moving_variables,2)
-small_factor_loadings_with_restrictions(:,i)=observation_equation_factor_loadings(:,i)-inv(table2array(factors)'*table2array(factors))*small_R'*inv(small_P)*(small_R*observation_equation_factor_loadings(:,i)-small_r);
+% for i=1:8 %size(slow_moving_variables,2)
+% small_factor_loadings_with_restrictions(:,i)=observation_equation_factor_loadings(:,i)-inv(table2array(factors)'*table2array(factors))*small_R(i,:)'*inv(small_P(i))*(small_R(i,:)*observation_equation_factor_loadings(:,i)-small_r(i,:));
+% end
+small_factor_loadings_with_restrictions(:,1:8)=eye(8);
+
+for i=9:size(fast_and_slow_variables,2)
+small_factor_loadings_with_restrictions(:,i)=observation_equation_factor_loadings(:,i);
 end
 
 A_companion_form =[EstMdl.AR{1, 1}, EstMdl.AR{1, 2}; eye(8) zeros(8)];
 eig_companion_form=eig(A_companion_form);
-abs(eig_companion_form)
+abs(eig_companion_form);
 
 C(1:8,1:8)=eye(8);
-
-for i=1:59
+years=5;
+months=years*12;
+for i=1:(months-1)
     bla=A_companion_form^i;
 C(1:8,(8*i+1):(8*(i+1)))=bla(1:8,1:8);
 end
@@ -162,14 +177,17 @@ end
 inv_H=inv(H);
 B(1:8,1:8)=inv_H;
 
-for i=1:59
+for i=1:(months-1)
 B(1:8,(8*i+1):(8*(i+1)))=C(1:8,(8*i+1):(8*(i+1)))*inv_H;
 end
 
 yields_loadings=[zeros(15,5), ns_factor_loadings];
-complete_observation_equation_factor_loadings=[observation_equation_factor_loadings, yields_loadings'];
+complete_observation_equation_factor_loadings=[small_factor_loadings_with_restrictions, yields_loadings'];
 observed_variables_irf=complete_observation_equation_factor_loadings'*B;
 
+for i=1:(months-1)
+first_variable_irf=observed_variables_irf(1,i)
+end
 model_data=synchronize(macro_data,yield_data);
 model_data=rmmissing(model_data);
 
@@ -223,7 +241,7 @@ end
 
 clear bootstrap_model_data
 for i=1:1000
-bootstrap_model_data{i}=cat(2,stationary_bootstrap_model_data{i}(3:241,1:49),bootstrap_yield_data{i});
+bootstrap_model_data{i}=cat(2,stationary_bootstrap_model_data{i}(2:240,1:49),bootstrap_yield_data{i});
 end
 
 %bla=[model_data.I02503MIndex, diff_yield_data.I02503MIndex, cumsum(diff_yield_data.I02503MIndex)];
@@ -231,6 +249,7 @@ ffr=rmmissing(synchronize(model_data,ffr));
 ffr=table2array(ffr(3:241,size(ffr,2)));
 irf=irf_function(bootstrap_model_data{1}(:,50:64),bootstrap_model_data{1}(:,1:49),ffr);
 %first try of irf inference
+clear irf
 for i=1:1000;
 irf{i}=irf_function(bootstrap_model_data{i}(:,50:64),bootstrap_model_data{i}(:,1:49),ffr);
 end
@@ -270,12 +289,6 @@ for i=1:1000;
 irf{i}=irf_function(bootstrap_model_data{i}(:,50:64),bootstrap_model_data{i}(:,1:49),bootstrap_ffr_data{i});
 end
 
-observed_variables_irf=observed_variables_irf(:,1:120);
-
-for i=1:1000;
-irf{i}=irf{i}(:,1:120);
-end
-
 fun = @(x) quantile(x,0.025); % add 20 to each element inside the cell
 output = cellfun(@(x) fun(x),irf,'uniformoutput',false)
 
@@ -290,12 +303,38 @@ quantile(bla(1,(1:999)*120+2),0.975);
 quantile(bla(1,(1:999)*120+2),0.1);
 quantile(bla(1,(1:999)*120+2),0.9);
 func = @(x,y) quantile(x,y=0.1);
-splitapply(func,bla(1,:),120);
+%splitapply(func,bla(1,:),120);
+
+for i=1:59
+bla_bla(i)=quantile(bla(1,(1:999)*59+i),0.025);
+end
+
+for i=1:59
+bla_bla2(i)=quantile(bla(1,(1:999)*59+i),0.975);
+end
+
+plot(observed_variables_irf(64,3+(8*(1:59))));
+hold on
+plot(bla_bla);
+hold on
+plot(bla_bla2);
+title('Impulse Response Function')
+xlabel('Time period')
+ylabel('Effect')
 
 for i=1:120
-bla_bla(i)=quantile(bla(1,(1:999)*120+i),0.025);
+bla_bla(i)=quantile(bla(2,(1:999)*120+i),0.025);
 end
 
 for i=1:120
-bla_bla2(i)=quantile(bla(1,(1:999)*120+i),0.975);
+bla_bla2(i)=quantile(bla(2,(1:999)*120+i),0.975);
 end
+
+plot(observed_variables_irf(2,:));
+hold on
+plot(bla_bla);
+hold on
+plot(bla_bla2);
+title('Impulse Response Function')
+xlabel('Time period')
+ylabel('Effect')
