@@ -38,7 +38,7 @@ sigma_x=cov(table2array(macro_data));
 big_lambda=V(:,((length(V)-4):length(V)));
 big_lambda=big_lambda(:,[5 4 3 2 1]);
 %First Macro Factors
-ft=table2array(macro_data)*big_lambda/height(macro_data);
+ft=table2array(macro_data)*big_lambda/width(macro_data);
 %common component
 common_component=(big_lambda*ft')';
 %idyosincratic eror
@@ -118,7 +118,7 @@ ffr=table2timetable([table(datetime(char(ffr{:,1}),'Format','yyyyMM')), ffr(:,2:
 factors=synchronize(ft_slow_name,ffr,ft_fast_name,betas);
 factors=rmmissing(factors);
 
-Mdl = varm(8,2);
+Mdl = varm(8,12);
 EstMdl = estimate(Mdl,factors);
 var=summarize(EstMdl)
 resid_covariance=var.Covariance;
@@ -162,7 +162,7 @@ for i=9:size(fast_and_slow_variables,2)
 small_factor_loadings_with_restrictions(:,i)=observation_equation_factor_loadings(:,i);
 end
 
-A_companion_form =[EstMdl.AR{1, 1}, EstMdl.AR{1, 2}; eye(8) zeros(8)];
+A_companion_form =[EstMdl.AR{1,1:12} ; eye(8*11) zeros(8*11,8)];
 eig_companion_form=eig(A_companion_form);
 abs(eig_companion_form);
 
@@ -305,15 +305,19 @@ quantile(bla(1,(1:999)*120+2),0.9);
 func = @(x,y) quantile(x,y=0.1);
 %splitapply(func,bla(1,:),120);
 
-for i=1:59
-bla_bla(i)=quantile(bla(1,(1:999)*59+i),0.025);
+for i=0:59
+bla_bla(i+1)=quantile(bla(3,(3+8*i)+480*(1:999)),0.025);
 end
 
-for i=1:59
-bla_bla2(i)=quantile(bla(1,(1:999)*59+i),0.975);
+for i=0:59
+bla_bla2(i+1)=std(rmoutliers(bla(3,(3+8*i)+480*(1:999))));
 end
 
-plot(observed_variables_irf(64,3+(8*(1:59))));
+% for i=0:59
+% bla_bla3(i+1)=mean(bla(3,(3+8*i)+480*(1:999)));
+% end
+
+plot(observed_variables_irf(3,3+(8*(0:59))));
 hold on
 plot(bla_bla);
 hold on
@@ -322,19 +326,28 @@ title('Impulse Response Function')
 xlabel('Time period')
 ylabel('Effect')
 
-for i=1:120
-bla_bla(i)=quantile(bla(2,(1:999)*120+i),0.025);
-end
+% plot(bla_bla3);
+% hold on
+% plot(bla_bla);
+% hold on
+% plot(bla_bla2);
+% title('Impulse Response Function')
+% xlabel('Time period')
+% ylabel('Effect')
 
-for i=1:120
-bla_bla2(i)=quantile(bla(2,(1:999)*120+i),0.975);
-end
-
-plot(observed_variables_irf(2,:));
-hold on
-plot(bla_bla);
-hold on
-plot(bla_bla2);
-title('Impulse Response Function')
-xlabel('Time period')
-ylabel('Effect')
+% for i=1:120
+% bla_bla(i)=quantile(bla(2,(1:999)*120+i),0.025);
+% end
+% 
+% for i=1:120
+% bla_bla2(i)=quantile(bla(2,(1:999)*120+i),0.975);
+% end
+% 
+% plot(observed_variables_irf(2,:));
+% hold on
+% plot(bla_bla);
+% hold on
+% plot(bla_bla2);
+% title('Impulse Response Function')
+% xlabel('Time period')
+% ylabel('Effect')
