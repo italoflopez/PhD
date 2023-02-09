@@ -351,3 +351,5 @@ ylabel('Effect')
 % title('Impulse Response Function')
 % xlabel('Time period')
 % ylabel('Effect')
+
+%Now let's do point estimation in the most general way
