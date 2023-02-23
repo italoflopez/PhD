@@ -1,0 +1,79 @@
+%First Paper code
+yield_data=readtable("C:\Users\Italo\Documents\PhD\PhD\USD Zero Coupon Yields.xlsx");
+yield_data=yield_data(3:height(yield_data),:);
+%yield_data=table2timetable(yield_data);
+t1 = datetime(1989,3,1);
+t2 = datetime(2022,6,1);
+t = t1:calmonths(1):t2;
+yield_data=table2timetable([table(datetime(t','Format','yyyyMM')), yield_data(:,2:size(yield_data,2))]);
+%macro_data=readtable("C:\Users\Italo\Documents\PhD\PhD\final_macro_data.csv");
+lambda=0.0609;
+maturity=[3, 6, 12, 24, 36, 48, 60, 72, 84, 96, 108, 120, 180, 240, 360];
+factor_loading_beta1 = ones(1,length(maturity));
+factor_loading_beta2 = (1-exp(-lambda*maturity))./(lambda*maturity);
+factor_loading_beta3 = (1-exp(-lambda*maturity))./(lambda*maturity)-exp(-lambda*maturity);
+%Nelson-Siegel Factor Loadings
+ns_factor_loadings = [ones(1,length(maturity)); (1-exp(-lambda*maturity))./(lambda*maturity); (1-exp(-lambda*maturity))./(lambda*maturity)-exp(-lambda*maturity)]';
+%Nelson-Siegel Factors
+for i=1:height(yield_data);
+betas(i,:)=inv(ns_factor_loadings'*ns_factor_loadings)*ns_factor_loadings'*table2array(yield_data(i,:))';
+end
+betas=table2timetable([table(datetime(yield_data.Var1,'Format','yyyyMM')), array2table(betas)]);
+%stationarity tests
+plot(betas.Var1,betas(:,1).betas1);
+title('Beta 1')
+plot(betas.Var1,betas(:,2).betas2);
+title('Beta 2')
+plot(betas.Var1,betas(:,3).betas3);
+title('Beta 3')
+
+[h,pValue,stat,cValue] = adftest(betas(:,1));
+[h,pValue,stat,cValue] = adftest(betas(:,2));
+[h,pValue,stat,cValue] = adftest(betas(:,3));
+
+[h,pValue,stat,cValue] = kpsstest(betas(:,1));
+[h,pValue,stat,cValue] = kpsstest(betas(:,2));
+[h,pValue,stat,cValue] = kpsstest(betas(:,3));
+
+[h,pValue,stat,cValue] = pptest(betas(:,1));
+[h,pValue,stat,cValue] = pptest(betas(:,2));
+[h,pValue,stat,cValue] = pptest(betas(:,3));
+
+table_betas=array2table([mean(table2array(betas))' min(table2array(betas))' max(table2array(betas))' std(table2array(betas))' [adftest(betas(:,1)).pValue adftest(betas(:,2)).pValue adftest(betas(:,3)).pValue]'])
+table_betas.Properties.VariableNames = ["Mean","Minimum","Maximum","Satndard Deviation","ADF test p-value"]
+table_betas=[array2table(["Beta 1","Beta 2","Beta 3"]') table_betas];
+table_betas.Properties.VariableNames(1)="Factor"
+writetable(table_betas,'betas_table.xlsx');
+
+estimated_yield_curve=ns_factor_loadings*table2array(betas)';
+estimated_yield_curve=estimated_yield_curve';
+yield_residuals=table2array(yield_data)-estimated_yield_curve;
+yield_residuals=table2timetable([table(datetime(yield_data.Var1,'Format','yyyyMM')), array2table(yield_residuals)]);
+yield_residuals.Properties.VariableNames=yield_data.Properties.VariableNames
+surf(table2array(yield_residuals));
+title('Yield Curve Residuals');
+estimated_yield_curve=array2timetable(array2table(estimated_yield_curve),'RowTimes', datetime(yield_data.Var1,'Format','yyyyMM'));
+
+macro_data=readtable("C:\Users\Italo\Documents\PhD\PhD\First\stationary_data_for_macro_factors.csv");
+macro_data=table2timetable([table(datetime(macro_data.Var1,'Format','yyyy-MM-dd')), macro_data(:,2:size(macro_data,2))]);
+[coeff,score,latent,tsquared,explained,mu] = pca(zscore(table2array(macro_data)));
+macro_factors=zscore(table2array(macro_data))*coeff;
+macro_factors=array2timetable(array2table(macro_factors),'RowTimes', datetime(macro_data.Var1,'Format','yyyyMM'));
+plot(macro_factors.Time,macro_factors.Var1);
+%fmincon with symbolic math toolbox tryout
+x=sym('x',[10 1])
+matlabFunction(x.^2'*x,'vars',{x},'file','objfunction');
+fmincon(@objfunction,zeros(10,1));
+
+%let's try ols with fmincon and symbolic math toolbox
+x=sym('x',[2 1]);
+matlabFunction((table2array(yield_data(:,1))-[table2array(yield_data(:,2)) ones(400,1)]*x)'*(table2array(yield_data(:,1))-[table2array(yield_data(:,2)) ones(400,1)]*x),'vars',{x},'file','objfunction');
+fmincon(@objfunction,zeros(2,1));
+
+%let's try pca with fmincon and symbolic math toolbox for the macro data
+%with four factors
+parpool('Threads')
+x=sym('x',[(size(macro_data,2)+size(macro_data,1)) 4]);
+tic;
+matlabFunction((table2array(macro_data)'-x(1:size(macro_data,2),1:4)*x((size(macro_data,2)+1):(end),1:4)')'*(table2array(macro_data)'-x(1:size(macro_data,2),1:4)*x((size(macro_data,2)+1):(end),1:4)'),'vars',{x},'file','objfunction');
+toc
