@@ -303,3 +303,42 @@ observed_variables_bootstrap_irf(:,:,z)=complete_observation_equation_factor_loa
 
 end
 toc
+std(B_bootstrap(3,3:8:480,:));
+for i=0:59
+irf_standard_deviation(i+1)=std(B_bootstrap(3,(3+8*i)+480*(1:999)));
+end
+
+plot(B(3,3+(8*(0:59))));
+hold on
+plot(B(3,3+(8*(0:59)))+irf_standard_deviation*2);
+hold on
+plot(B(3,3+(8*(0:59)))-irf_standard_deviation*2);
+title('Impulse Response Function: Interest Rate')
+xlabel('Time period')
+ylabel('Effect')
+
+for i=0:59
+irf_standard_deviation(i+1)=std(B_bootstrap(6,(3+8*i)+480*(1:999)));
+end
+
+plot(B(6,3+(8*(0:59))));
+hold on
+plot(B(6,3+(8*(0:59)))+irf_standard_deviation*2);
+hold on
+plot(B(6,3+(8*(0:59)))-irf_standard_deviation*2);
+title('Impulse Response Function: Nelson-Siegel Yield Curve Level')
+xlabel('Time period')
+ylabel('Effect')
+
+for i=0:59
+irf_standard_deviation(i+1)=std(B_bootstrap(7,(3+8*i)+480*(1:999)));
+end
+
+plot(-1*B(7,3+(8*(0:59))));
+hold on
+plot(-1*B(7,3+(8*(0:59)))+irf_standard_deviation*2);
+hold on
+plot(-1*B(7,3+(8*(0:59)))-irf_standard_deviation*2);
+title('Impulse Response Function: Nelson-Siegel Yield Curve Slope')
+xlabel('Time period')
+ylabel('Effect')

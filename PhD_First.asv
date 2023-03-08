@@ -81,12 +81,12 @@ matlabFunction((table2array(yield_data(:,1))-[table2array(yield_data(:,2)) ones(
 fmincon(@objfunction,zeros(2,1));
 
 %let's try pca with fmincon and symbolic math toolbox for the macro data
-%with four factors
-parpool('Threads')
-x=sym('x',[(size(macro_data,2)+size(macro_data,1)) 4]);
-tic;
-matlabFunction((table2array(macro_data)'-x(1:size(macro_data,2),1:4)*x((size(macro_data,2)+1):(end),1:4)')'*(table2array(macro_data)'-x(1:size(macro_data,2),1:4)*x((size(macro_data,2)+1):(end),1:4)'),'vars',{x},'file','objfunction');
-toc
+% with four factors
+% parpool('Threads')
+% x=sym('x',[(size(macro_data,2)+size(macro_data,1)) 4]);
+% tic;
+% matlabFunction((table2array(macro_data)'-x(1:size(macro_data,2),1:4)*x((size(macro_data,2)+1):(end),1:4)')'*(table2array(macro_data)'-x(1:size(macro_data,2),1:4)*x((size(macro_data,2)+1):(end),1:4)'),'vars',{x},'file','objfunction');
+% toc
 %selecting slow moving variables
 data=synchronize(macro_data,ffr,betas);
 data=rmmissing(data);
@@ -268,6 +268,7 @@ plot(bootstrap_observables(:,50,1));
 hold on
 plot(table2array(observables(:,50)));
 
+tic;
 for z=1:n_bootstrap_samples
 Mdl = varm(8,12);
 EstMdl = estimate(Mdl,bootstrap_factors(:,:,z));
@@ -301,3 +302,17 @@ complete_observation_equation_factor_loadings=[full_named_slow_factor_loadings f
 observed_variables_bootstrap_irf(:,:,z)=complete_observation_equation_factor_loadings'*B_bootstrap(:,:,z);
 
 end
+toc
+std(B_bootstrap(3,3:8:480,:));
+for i=0:59
+bla_bla2(i+1)=std(B_bootstrap(3,(3+8*i)+480*(1:999)));
+end
+
+plot(B(3,3+(8*(0:59))));
+hold on
+plot(B(3,3+(8*(0:59)))+bla_bla2*2);
+hold on
+plot(B(3,3+(8*(0:59)))-bla_bla2*2);
+title('Impulse Response Function:')
+xlabel('Time period')
+ylabel('Effect')
