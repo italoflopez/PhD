@@ -81,19 +81,20 @@ matlabFunction((table2array(yield_data(:,1))-[table2array(yield_data(:,2)) ones(
 fmincon(@objfunction,zeros(2,1));
 
 %let's try pca with fmincon and symbolic math toolbox for the macro data
-%with four factors
-parpool('Threads')
-x=sym('x',[(size(macro_data,2)+size(macro_data,1)) 4]);
-tic;
-matlabFunction((table2array(macro_data)'-x(1:size(macro_data,2),1:4)*x((size(macro_data,2)+1):(end),1:4)')'*(table2array(macro_data)'-x(1:size(macro_data,2),1:4)*x((size(macro_data,2)+1):(end),1:4)'),'vars',{x},'file','objfunction');
-toc
+% with four factors
+% parpool('Threads')
+% x=sym('x',[(size(macro_data,2)+size(macro_data,1)) 4]);
+% tic;
+% matlabFunction((table2array(macro_data)'-x(1:size(macro_data,2),1:4)*x((size(macro_data,2)+1):(end),1:4)')'*(table2array(macro_data)'-x(1:size(macro_data,2),1:4)*x((size(macro_data,2)+1):(end),1:4)'),'vars',{x},'file','objfunction');
+% toc
 %selecting slow moving variables
 data=synchronize(macro_data,ffr,betas);
 data=rmmissing(data);
 macro_data=data(:,1:78);
 
-slow_moving_variables=macro_data(:,1:47);
-slow_moving_variables=[slow_moving_variables macro_data(:,59:78)];
+slow_moving_variables=macro_data(:,2:47);
+slow_moving_variables=[slow_moving_variables macro_data(:,59)];
+slow_moving_variables=[slow_moving_variables macro_data(:,61:78)];
 [coeff,score,latent,tsquared,explained,mu] = pca(zscore(table2array(slow_moving_variables)));
 slow_macro_factors=zscore(table2array(slow_moving_variables))*coeff;
 slow_macro_factors=slow_macro_factors(:,1:2);
@@ -117,7 +118,7 @@ hold on
 plot(fast_macro_factors.Time,table2array(fast_macro_factors.Var2));
 
 %let's reorder slow moving variables
-slow_moving_variables=[slow_moving_variables(:,1) slow_moving_variables(:,49) slow_moving_variables(:,2:48) slow_moving_variables(:,50:67)];
+slow_moving_variables=[slow_moving_variables(:,1) slow_moving_variables(:,48) slow_moving_variables(:,2:47) slow_moving_variables(:,49:65)];
 %reordering fast moving variables
 fast_moving_variables=[fast_moving_variables(:,1) fast_moving_variables(:,6) fast_moving_variables(:,2:5) fast_moving_variables(:,7:11)];
 
@@ -146,26 +147,42 @@ regression_factors=rmmissing(regression_factors);
 full_sample=synchronize(named_slow_macro_factors,ffr,named_fast_macro_factors,slow_moving_variables,fast_moving_variables);
 full_sample=rmmissing(full_sample);
 named_slow_macro_factors=full_sample(:,1:2);
-slow_moving_variables=full_sample(:,6:72);
+slow_moving_variables=full_sample(:,6:70);
+constant=ones(size(named_slow_macro_factors,1),1);
 for i=1:size(slow_moving_variables,2)
-named_slow_factor_loadings(:,i)=inv(table2array(named_slow_macro_factors)'*table2array(named_slow_macro_factors))*table2array(named_slow_macro_factors)'*table2array(slow_moving_variables(:,i));
+named_slow_factor_loadings(:,i)=inv([table2array(named_slow_macro_factors) constant]'*[table2array(named_slow_macro_factors) constant])*[table2array(named_slow_macro_factors) constant]'*[table2array(slow_moving_variables(:,i))];
 end
 
-fast_moving_variables=full_sample(:,73:83);
-for i=1:size(fast_moving_variables,2)
-named_fast_factor_loadings(:,i)=inv(table2array(regression_factors)'*table2array(regression_factors))*table2array(regression_factors)'*table2array(fast_moving_variables(:,i));
+for i=1:size(slow_moving_variables,2)
+slow_variables_hat(:,i)=[table2array(named_slow_macro_factors) constant]*named_slow_factor_loadings(:,i);
 end
+slow_variables_residuals=table2array(slow_moving_variables)-slow_variables_hat;
+slow_variables_residuals=array2timetable(slow_variables_residuals,'RowTimes',datetime(slow_moving_variables.Var1,'Format','yyyyMM'));
+
+constant=ones(size(regression_factors,1),1);
+fast_moving_variables=full_sample(:,71:81);
+for i=1:size(fast_moving_variables,2)
+named_fast_factor_loadings(:,i)=inv([table2array(regression_factors) constant]'*[table2array(regression_factors) constant])*[table2array(regression_factors) constant]'*table2array(fast_moving_variables(:,i));
+end
+
+for i=1:size(fast_moving_variables,2)
+fast_variables_hat(:,i)=[table2array(regression_factors) constant]*named_fast_factor_loadings(:,i);
+end
+fast_variables_residuals=table2array(fast_moving_variables)-fast_variables_hat;
+fast_variables_residuals=array2timetable(fast_variables_residuals,'RowTimes',datetime(fast_moving_variables.Var1,'Format','yyyyMM'));
 
 factors=synchronize(regression_factors,betas);
 factors=rmmissing(factors);
-
+%Estimation of the state equation
 Mdl = varm(8,12);
 EstMdl = estimate(Mdl,factors);
 var=summarize(EstMdl)
 resid_covariance=var.Covariance;
 H=chol(resid_covariance,'lower')*diag(diag(chol(resid_covariance,'lower')).^2)^(-1/2);
 E = infer(EstMdl,factors);
-
+response=irf(EstMdl);
+armairf(EstMdl.AR,[],InnovCov=var.Covariance);
+%Estimation of the IRFs
 A_companion_form =[EstMdl.AR{1,1:12}; eye(8*11) zeros(8*11,8)];% 
 eig_companion_form=eig(A_companion_form);
 abs(eig_companion_form);
@@ -186,10 +203,103 @@ B(1:8,(8*i+1):(8*(i+1)))=C(1:8,(8*i+1):(8*(i+1)))*inv_H;
 end
 
 yields_loadings=[zeros(15,5), ns_factor_loadings];
-full_named_slow_factor_loadings=[zeros(6,67); named_slow_factor_loadings];
-full_named_fast_factor_loadings=[zeros(3,11); named_fast_factor_loadings];
+full_named_slow_factor_loadings=[zeros(5,65); named_slow_factor_loadings];
+full_named_fast_factor_loadings=[zeros(2,11); named_fast_factor_loadings];
 complete_observation_equation_factor_loadings=[full_named_slow_factor_loadings full_named_fast_factor_loadings, yields_loadings'];
 observed_variables_irf=complete_observation_equation_factor_loadings'*B;
 
-plot(B(3,:));
-plot(observed_variables_irf(93,:));
+plot(B(3,3:8:480));
+plot(B(6,3:8:480));
+plot(B(7,3:8:480));
+plot(B(8,3:8:480));
+plot(observed_variables_irf(79,3:8:480));
+%Now we will do Yamamoto (2016)
+factors_starting_values=factors(1:12,:);
+state_equation_residuals=E(:,9:16);
+state_equation_residuals=table2array(state_equation_residuals)-mean(table2array(state_equation_residuals));
+n_bootstrap_samples=1000;
+bootstrap_factors=zeros(size(factors,1),size(factors,2),n_bootstrap_samples);
+for z=1:n_bootstrap_samples
+bootstrap_sample_points=randsample((size(state_equation_residuals,1)),(size(state_equation_residuals,1)));
+state_equation_bootstrap_residuals=state_equation_residuals(bootstrap_sample_points,:);
+bootstrap_factors(1:12,:,z)=table2array(factors_starting_values);
+estimated_AR=[EstMdl.AR{1,1:12}];
+for i=1:(size(bootstrap_factors,1)-12)
+    internal_sum=estimated_AR(1:8,1:8)*bootstrap_factors((i+11),:,z)';
+    for j=1:11
+        internal_sum=internal_sum+estimated_AR(1:8,(1+8*j):(8+8*j))*bootstrap_factors((i+11),:,z)';
+    end
+   bootstrap_factors(i+12,:,z)= internal_sum+state_equation_bootstrap_residuals(i,:)';
+end
+end
+plot(bootstrap_factors(:,6,100));
+hold on
+plot(bootstrap_factors(:,6,1));
+
+observable_variables_residuals=synchronize(slow_variables_residuals,fast_variables_residuals,yield_residuals);
+observable_variables_residuals=rmmissing(observable_variables_residuals);
+
+observable_variables_residuals=table2array(observable_variables_residuals)-mean(table2array(observable_variables_residuals));
+yields_loadings=[zeros(15,6), ns_factor_loadings];
+full_named_slow_factor_loadings=[zeros(6,65); named_slow_factor_loadings];
+full_named_fast_factor_loadings=[zeros(3,11); named_fast_factor_loadings];
+complete_observation_equation_factor_loadings=[full_named_slow_factor_loadings full_named_fast_factor_loadings, yields_loadings'];
+
+n_bootstrap_samples=1000;
+bootstrap_observables=zeros(size(observable_variables_residuals,1),size(observable_variables_residuals,2),n_bootstrap_samples);
+for z=1:n_bootstrap_samples
+    bootstrap_sample_points=randsample((size(observable_variables_residuals,1)),(size(observable_variables_residuals,1)));
+observable_variables_bootstrap_residuals=observable_variables_residuals(bootstrap_sample_points,:);
+for i=1:size(observable_variables_residuals,1)
+bootstrap_observables(i,:,z)=[bootstrap_factors(i,1:2,z) 1 bootstrap_factors(i,3:8,z)]*complete_observation_equation_factor_loadings+observable_variables_bootstrap_residuals(i,:);
+end
+end
+
+plot(bootstrap_observables(:,91,100));
+hold on
+plot(bootstrap_observables(:,91,1));
+
+observables=synchronize(slow_moving_variables,fast_moving_variables,yield_data);
+observables=rmmissing(observables);
+
+plot(bootstrap_observables(:,50,100));
+hold on
+plot(bootstrap_observables(:,50,1));
+hold on
+plot(table2array(observables(:,50)));
+
+tic;
+for z=1:n_bootstrap_samples
+Mdl = varm(8,12);
+EstMdl = estimate(Mdl,bootstrap_factors(:,:,z));
+var=summarize(EstMdl);
+resid_covariance=var.Covariance;
+H=chol(resid_covariance,'lower')*diag(diag(chol(resid_covariance,'lower')).^2)^(-1/2);
+E = infer(EstMdl,bootstrap_factors(:,:,z));
+A_companion_form =[EstMdl.AR{1,1:12}; eye(8*11) zeros(8*11,8)];% 
+eig_companion_form=eig(A_companion_form);
+abs(eig_companion_form);
+
+C(1:8,1:8)=eye(8);
+years=5;
+months=years*12;
+for i=1:(months-1)
+    bla=A_companion_form^i;
+C(1:8,(8*i+1):(8*(i+1)))=bla(1:8,1:8);
+end
+
+inv_H=inv(H);
+B_bootstrap(1:8,1:8,z)=inv_H;
+
+for i=1:(months-1)
+B_bootstrap(1:8,(8*i+1):(8*(i+1)),z)=C(1:8,(8*i+1):(8*(i+1)))*inv_H;
+end
+
+yields_loadings=[zeros(15,5), ns_factor_loadings];
+full_named_slow_factor_loadings=[zeros(5,65); named_slow_factor_loadings];
+full_named_fast_factor_loadings=[zeros(2,11); named_fast_factor_loadings];
+complete_observation_equation_factor_loadings=[full_named_slow_factor_loadings full_named_fast_factor_loadings, yields_loadings'];
+observed_variables_bootstrap_irf(:,:,z)=complete_observation_equation_factor_loadings'*B_bootstrap(:,:,z);
+
+end
+toc
