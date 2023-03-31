@@ -1,7 +1,0 @@
-%factors estimation
-function [factors,factor_loadings]=factors_estimation(data,number_of_factors,restrictions)
-x=data;
-n=size(data,2);
-r=number_of_factors;
-objective_pca=@(y) trace((size(x,2)*size(x,1))^(-1)*(sum((x-y(1:n,1:r)*y((),(r+1):(2r+1))')*(x-y(1)*y(2:end))')));
-
