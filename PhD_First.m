@@ -15,8 +15,9 @@ factor_loading_beta3 = (1-exp(-lambda*maturity))./(lambda*maturity)-exp(-lambda*
 %Nelson-Siegel Factor Loadings
 ns_factor_loadings = [ones(1,length(maturity)); (1-exp(-lambda*maturity))./(lambda*maturity); (1-exp(-lambda*maturity))./(lambda*maturity)-exp(-lambda*maturity)]';
 %Nelson-Siegel Factors
+inverted_matrix=inv(ns_factor_loadings'*ns_factor_loadings);
 for i=1:height(yield_data);
-betas(i,:)=inv(ns_factor_loadings'*ns_factor_loadings)*ns_factor_loadings'*table2array(yield_data(i,:))';
+betas(i,:)=inverted_matrix*ns_factor_loadings'*table2array(yield_data(i,:))';
 end
 betas=table2timetable([table(datetime(yield_data.Var1,'Format','yyyyMM')), array2table(betas)]);
 %stationarity tests
@@ -27,17 +28,17 @@ title('Beta 2')
 plot(betas.Var1,betas(:,3).betas3);
 title('Beta 3')
 
-[h,pValue,stat,cValue] = adftest(betas(:,1));
-[h,pValue,stat,cValue] = adftest(betas(:,2));
-[h,pValue,stat,cValue] = adftest(betas(:,3));
+[h,pValue] = adftest(betas(:,1));
+[h,pValue] = adftest(betas(:,2));
+[h,pValue] = adftest(betas(:,3));
 
-[h,pValue,stat,cValue] = kpsstest(betas(:,1));
-[h,pValue,stat,cValue] = kpsstest(betas(:,2));
-[h,pValue,stat,cValue] = kpsstest(betas(:,3));
+[h,pValue] = kpsstest(betas(:,1));
+[h,pValue] = kpsstest(betas(:,2));
+[h,pValue] = kpsstest(betas(:,3));
 
-[h,pValue,stat,cValue] = pptest(betas(:,1));
-[h,pValue,stat,cValue] = pptest(betas(:,2));
-[h,pValue,stat,cValue] = pptest(betas(:,3));
+[h,pValue] = pptest(betas(:,1));
+[h,pValue] = pptest(betas(:,2));
+[h,pValue] = pptest(betas(:,3));
 
 table_betas=array2table([mean(table2array(betas))' min(table2array(betas))' max(table2array(betas))' std(table2array(betas))' [adftest(betas(:,1)).pValue adftest(betas(:,2)).pValue adftest(betas(:,3)).pValue]'])
 table_betas.Properties.VariableNames = ["Mean","Minimum","Maximum","Satndard Deviation","ADF test p-value"]
@@ -88,6 +89,9 @@ fmincon(@objfunction,zeros(2,1));
 % matlabFunction((table2array(macro_data)'-x(1:size(macro_data,2),1:4)*x((size(macro_data,2)+1):(end),1:4)')'*(table2array(macro_data)'-x(1:size(macro_data,2),1:4)*x((size(macro_data,2)+1):(end),1:4)'),'vars',{x},'file','objfunction');
 % toc
 %selecting slow moving variables
+ffr=readtable("C:\Users\Italo\Documents\PhD\PhD\ffr.csv");
+ffr=table2timetable([table(datetime(char(ffr{:,1}),'Format','yyyyMM')), ffr(:,2:size(ffr,2))]);
+
 data=synchronize(macro_data,ffr,betas);
 data=rmmissing(data);
 macro_data=data(:,1:78);
@@ -121,13 +125,14 @@ plot(fast_macro_factors.Time,table2array(fast_macro_factors.Var2));
 slow_moving_variables=[slow_moving_variables(:,1) slow_moving_variables(:,48) slow_moving_variables(:,2:47) slow_moving_variables(:,49:65)];
 %reordering fast moving variables
 fast_moving_variables=[fast_moving_variables(:,1) fast_moving_variables(:,6) fast_moving_variables(:,2:5) fast_moving_variables(:,7:11)];
-
+matrix_inverted_slow=inv(table2array(table2array(slow_macro_factors))'*table2array(table2array(slow_macro_factors)));
 for i=1:size(slow_moving_variables,2)
-pca_slow_factor_loadings(:,i)=inv(table2array(table2array(slow_macro_factors))'*table2array(table2array(slow_macro_factors)))*table2array(table2array(slow_macro_factors))'*table2array(slow_moving_variables(:,i));
+pca_slow_factor_loadings(:,i)=matrix_inverted_slow*table2array(table2array(slow_macro_factors))'*table2array(slow_moving_variables(:,i));
 end
 
+matrix_inverted_fast=inv(table2array(table2array(fast_macro_factors))'*table2array(table2array(fast_macro_factors)));
 for i=1:size(fast_moving_variables,2)
-pca_fast_factor_loadings(:,i)=inv(table2array(table2array(fast_macro_factors))'*table2array(table2array(fast_macro_factors)))*table2array(table2array(fast_macro_factors))'*table2array(fast_moving_variables(:,i));
+pca_fast_factor_loadings(:,i)=matrix_inverted_fast*table2array(table2array(fast_macro_factors))'*table2array(fast_moving_variables(:,i));
 end
 
 named_slow_macro_factors=table2array(table2array(slow_macro_factors))*pca_slow_factor_loadings(:,1:2);
@@ -138,9 +143,6 @@ named_fast_macro_factors=table2array(table2array(fast_macro_factors))*pca_fast_f
 corr(named_fast_macro_factors(:,1),named_fast_macro_factors(:,2));
 named_fast_macro_factors=table2timetable([table(datetime(slow_moving_variables.Var1,'Format','yyyyMM')), array2table(named_fast_macro_factors)]);
 
-ffr=readtable("C:\Users\Italo\Documents\PhD\PhD\ffr.csv");
-ffr=table2timetable([table(datetime(char(ffr{:,1}),'Format','yyyyMM')), ffr(:,2:size(ffr,2))]);
-
 regression_factors=synchronize(named_slow_macro_factors,ffr,named_fast_macro_factors);
 regression_factors=rmmissing(regression_factors);
 
@@ -149,8 +151,9 @@ full_sample=rmmissing(full_sample);
 named_slow_macro_factors=full_sample(:,1:2);
 slow_moving_variables=full_sample(:,6:70);
 constant=ones(size(named_slow_macro_factors,1),1);
+matrix_inverted_named_slow=inv([table2array(named_slow_macro_factors) constant]'*[table2array(named_slow_macro_factors) constant]);
 for i=1:size(slow_moving_variables,2)
-named_slow_factor_loadings(:,i)=inv([table2array(named_slow_macro_factors) constant]'*[table2array(named_slow_macro_factors) constant])*[table2array(named_slow_macro_factors) constant]'*[table2array(slow_moving_variables(:,i))];
+named_slow_factor_loadings(:,i)=matrix_inverted_named_slow*[table2array(named_slow_macro_factors) constant]'*[table2array(slow_moving_variables(:,i))];
 end
 
 for i=1:size(slow_moving_variables,2)
@@ -161,8 +164,9 @@ slow_variables_residuals=array2timetable(slow_variables_residuals,'RowTimes',dat
 
 constant=ones(size(regression_factors,1),1);
 fast_moving_variables=full_sample(:,71:81);
+matrix_inverted_named_fast=inv([table2array(regression_factors) constant]'*[table2array(regression_factors) constant]);
 for i=1:size(fast_moving_variables,2)
-named_fast_factor_loadings(:,i)=inv([table2array(regression_factors) constant]'*[table2array(regression_factors) constant])*[table2array(regression_factors) constant]'*table2array(fast_moving_variables(:,i));
+named_fast_factor_loadings(:,i)=matrix_inverted_named_fast*[table2array(regression_factors) constant]'*table2array(fast_moving_variables(:,i));
 end
 
 for i=1:size(fast_moving_variables,2)
@@ -174,7 +178,9 @@ fast_variables_residuals=array2timetable(fast_variables_residuals,'RowTimes',dat
 factors=synchronize(regression_factors,betas);
 factors=rmmissing(factors);
 %Estimation of the state equation
-Mdl = varm(8,12);
+number_of_factors = size(factors,2);
+lag_order=12;
+Mdl = varm(number_of_factors,lag_order);
 EstMdl = estimate(Mdl,factors);
 var=summarize(EstMdl)
 resid_covariance=var.Covariance;
@@ -183,9 +189,16 @@ E = infer(EstMdl,factors);
 response=irf(EstMdl);
 armairf(EstMdl.AR,[],InnovCov=var.Covariance);
 %Estimation of the IRFs
-A_companion_form =[EstMdl.AR{1,1:12}; eye(8*11) zeros(8*11,8)];% 
+A_companion_form =[EstMdl.AR{1,1:lag_order};eye(8*(lag_order-1)) zeros(8*(lag_order-1),8)];% 
 eig_companion_form=eig(A_companion_form);
 abs(eig_companion_form);
+AICs=lag_order_selection(factors,24);
+[min_num,min_idx] = min(AICs);
+for i = 1:size(factors,2)
+table_residuals_autocorrelation_test(i,:) = lbqtest(E(:,i));
+end
+table_residuals_autocorrelation_test
+[h,pValue,stat,cValue]=mlbqtest(table2array(E),24);
 
 C(1:8,1:8)=eye(8);
 years=5;
@@ -214,22 +227,22 @@ plot(B(7,3:8:480));
 plot(B(8,3:8:480));
 plot(observed_variables_irf(79,3:8:480));
 %Now we will do Yamamoto (2016)
-factors_starting_values=factors(1:12,:);
-state_equation_residuals=E(:,9:16);
+factors_starting_values=factors(1:lag_order,:);
+state_equation_residuals=E(:,(number_of_factors+1):(number_of_factors+8));
 state_equation_residuals=table2array(state_equation_residuals)-mean(table2array(state_equation_residuals));
 n_bootstrap_samples=1000;
 bootstrap_factors=zeros(size(factors,1),size(factors,2),n_bootstrap_samples);
 for z=1:n_bootstrap_samples
 bootstrap_sample_points=randsample((size(state_equation_residuals,1)),(size(state_equation_residuals,1)));
 state_equation_bootstrap_residuals=state_equation_residuals(bootstrap_sample_points,:);
-bootstrap_factors(1:12,:,z)=table2array(factors_starting_values);
-estimated_AR=[EstMdl.AR{1,1:12}];
-for i=1:(size(bootstrap_factors,1)-12)
-    internal_sum=estimated_AR(1:8,1:8)*bootstrap_factors((i+11),:,z)';
-    for j=1:11
-        internal_sum=internal_sum+estimated_AR(1:8,(1+8*j):(8+8*j))*bootstrap_factors((i+11),:,z)';
+bootstrap_factors(1:lag_order,:,z)=table2array(factors_starting_values);
+estimated_AR=[EstMdl.AR{1,1:lag_order}];
+for i=1:(size(bootstrap_factors,1)-lag_order)
+    internal_sum=estimated_AR(1:number_of_factors,1:number_of_factors)*bootstrap_factors((i+(lag_order-1)),:,z)';
+    for j=1:(lag_order-1)
+        internal_sum=internal_sum+estimated_AR(1:number_of_factors,(1+number_of_factors*j):(number_of_factors+number_of_factors*j))*bootstrap_factors((i+(lag_order-1)),:,z)';
     end
-   bootstrap_factors(i+12,:,z)= internal_sum+state_equation_bootstrap_residuals(i,:)';
+   bootstrap_factors(i+lag_order,:,z)= internal_sum+state_equation_bootstrap_residuals(i,:)';
 end
 end
 plot(bootstrap_factors(:,6,100));
@@ -270,29 +283,29 @@ plot(table2array(observables(:,50)));
 
 tic;
 for z=1:n_bootstrap_samples
-Mdl = varm(8,12);
+Mdl = varm(number_of_factors,lag_order);
 EstMdl = estimate(Mdl,bootstrap_factors(:,:,z));
 var=summarize(EstMdl);
 resid_covariance=var.Covariance;
 H=chol(resid_covariance,'lower')*diag(diag(chol(resid_covariance,'lower')).^2)^(-1/2);
 E = infer(EstMdl,bootstrap_factors(:,:,z));
-A_companion_form =[EstMdl.AR{1,1:12}; eye(8*11) zeros(8*11,8)];% 
+A_companion_form =[EstMdl.AR{1,1:lag_order}; eye(number_of_factors*(lag_order-1)) zeros(number_of_factors*(lag_order-1),number_of_factors)];% 
 eig_companion_form=eig(A_companion_form);
 abs(eig_companion_form);
 
-C(1:8,1:8)=eye(8);
+C(1:number_of_factors,1:number_of_factors)=eye(number_of_factors);
 years=5;
 months=years*12;
 for i=1:(months-1)
     bla=A_companion_form^i;
-C(1:8,(8*i+1):(8*(i+1)))=bla(1:8,1:8);
+C(1:number_of_factors,(number_of_factors*i+1):(number_of_factors*(i+1)))=bla(1:number_of_factors,1:number_of_factors);
 end
 
 inv_H=inv(H);
-B_bootstrap(1:8,1:8,z)=inv_H;
+B_bootstrap(1:number_of_factors,1:number_of_factors,z)=inv_H;
 
 for i=1:(months-1)
-B_bootstrap(1:8,(8*i+1):(8*(i+1)),z)=C(1:8,(8*i+1):(8*(i+1)))*inv_H;
+B_bootstrap(1:number_of_factors,(number_of_factors*i+1):(number_of_factors*(i+1)),z)=C(1:number_of_factors,(number_of_factors*i+1):(number_of_factors*(i+1)))*inv_H;
 end
 
 yields_loadings=[zeros(15,5), ns_factor_loadings];
@@ -303,9 +316,9 @@ observed_variables_bootstrap_irf(:,:,z)=complete_observation_equation_factor_loa
 
 end
 toc
-std(B_bootstrap(3,3:8:480,:));
+std(B_bootstrap(3,3:number_of_factors:480,:));
 for i=0:59
-irf_standard_deviation(i+1)=std(B_bootstrap(3,(3+8*i)+480*(1:999)));
+irf_standard_deviation(i+1)=std(B_bootstrap(3,(3+number_of_factors*i)+480*(1:999)));
 end
 
 plot(B(3,3+(8*(0:59))));
@@ -342,3 +355,43 @@ plot(-1*B(7,3+(8*(0:59)))-irf_standard_deviation*2);
 title('Impulse Response Function: Nelson-Siegel Yield Curve Slope')
 xlabel('Time period')
 ylabel('Effect')
+
+for i=0:59
+irf_standard_deviation(i+1)=std(B_bootstrap(8,(3+8*i)+480*(1:999)));
+end
+
+plot(B(8,3+(8*(0:59))));
+hold on
+plot(B(8,3+(8*(0:59)))+irf_standard_deviation*2);
+hold on
+plot(B(8,3+(8*(0:59)))-irf_standard_deviation*2);
+title('Impulse Response Function: Nelson-Siegel Yield Curve Curvature')
+xlabel('Time period')
+ylabel('Effect')
+
+for i=0:59
+irf_standard_deviation(i+1)=std(observed_variables_bootstrap_irf(1,(3+8*i)+480*(1:999)));
+end
+
+plot(observed_variables_irf(1,3+(8*(0:59))));
+hold on
+plot(observed_variables_irf(1,3+(8*(0:59)))+irf_standard_deviation*2);
+hold on
+plot(observed_variables_irf(1,3+(8*(0:59)))-irf_standard_deviation*2);
+title('Impulse Response Function: Industrial Production, final goods')
+xlabel('Time period')
+ylabel('Effect')
+
+for i=0:59
+irf_standard_deviation(i+1)=std(observed_variables_bootstrap_irf(2,(3+8*i)+480*(1:999)));
+end
+
+plot(observed_variables_irf(2,3+(8*(0:59))));
+hold on
+plot(observed_variables_irf(2,3+(8*(0:59)))+irf_standard_deviation*2);
+hold on
+plot(observed_variables_irf(2,3+(8*(0:59)))-irf_standard_deviation*2);
+title('Impulse Response Function: CPI')
+xlabel('Time period')
+ylabel('Effect')
+

@@ -21,24 +21,24 @@ betas(i,:)=inv(ns_factor_loadings'*ns_factor_loadings)*ns_factor_loadings'*table
 end
 betas=table2timetable([table(datetime(yield_data.Var1,'Format','yyyyMM')), array2table(betas)]);
 %stationarity tests
-plot(betas.Var1,betas(:,1).betas1);
+plot(betas.Var1,betas.betas1);
 title('Beta 1')
 plot(betas.Var1,betas(:,2).betas2);
 title('Beta 2')
 plot(betas.Var1,betas(:,3).betas3);
 title('Beta 3')
 
-[h,pValue,stat,cValue] = adftest(betas(:,1));
-[h,pValue,stat,cValue] = adftest(betas(:,2));
-[h,pValue,stat,cValue] = adftest(betas(:,3));
+[h,pValue] = adftest(betas(:,1));
+[h,pValue] = adftest(betas(:,2));
+[h,pValue] = adftest(betas(:,3));
 
-[h,pValue,stat,cValue] = kpsstest(betas(:,1));
-[h,pValue,stat,cValue] = kpsstest(betas(:,2));
-[h,pValue,stat,cValue] = kpsstest(betas(:,3));
+[h,pValue] = kpsstest(betas(:,1));
+[h,pValue] = kpsstest(betas(:,2));
+[h,pValue] = kpsstest(betas(:,3));
 
-[h,pValue,stat,cValue] = pptest(betas(:,1));
-[h,pValue,stat,cValue] = pptest(betas(:,2));
-[h,pValue,stat,cValue] = pptest(betas(:,3));
+[h,pValue] = pptest(betas(:,1));
+[h,pValue] = pptest(betas(:,2));
+[h,pValue] = pptest(betas(:,3));
 
 table_betas=array2table([mean(table2array(betas))' min(table2array(betas))' max(table2array(betas))' std(table2array(betas))' [adftest(betas(:,1)).pValue adftest(betas(:,2)).pValue adftest(betas(:,3)).pValue]'])
 table_betas.Properties.VariableNames = ["Mean","Minimum","Maximum","Satndard Deviation","ADF test p-value"]
@@ -78,9 +78,9 @@ matlabFunction(x.^2'*x,'vars',{x},'file','objfunction');
 fmincon(@objfunction,zeros(10,1));
 
 %let's try ols with fmincon and symbolic math toolbox
-x=sym('x',[2 1]);
-matlabFunction((table2array(yield_data(:,1))-[table2array(yield_data(:,2)) ones(400,1)]*x)'*(table2array(yield_data(:,1))-[table2array(yield_data(:,2)) ones(400,1)]*x),'vars',{x},'file','objfunction');
-fmincon(@objfunction,zeros(2,1));
+% x=sym('x',[2 1]);
+% matlabFunction((table2array(yield_data(:,1))-[table2array(yield_data(:,2)) ones(400,1)]*x)'*(table2array(yield_data(:,1))-[table2array(yield_data(:,2)) ones(400,1)]*x),'vars',{x},'file','objfunction');
+% fmincon(@objfunction,zeros(2,1));
 
 %let's try pca with fmincon and symbolic math toolbox for the macro data
 % with four factors
@@ -177,18 +177,20 @@ fast_variables_residuals=array2timetable(fast_variables_residuals,'RowTimes',dat
 factors=synchronize(regression_factors,betas);
 factors=rmmissing(factors);
 %Estimation of the state equation
-Mdl = varm(8,1);
+Mdl = varm(8,6);
 EstMdl = estimate(Mdl,factors);
 var=summarize(EstMdl)
+AIC=var.AIC;
 resid_covariance=var.Covariance;
 H=chol(resid_covariance,'lower')*diag(diag(chol(resid_covariance,'lower')).^2)^(-1/2);
 E = infer(EstMdl,factors);
 response=irf(EstMdl);
 armairf(EstMdl.AR,[],InnovCov=var.Covariance);
 %Estimation of the IRFs
-A_companion_form =[EstMdl.AR{1,1}]%; eye(8*11) zeros(8*11,8)];% 
+A_companion_form =[EstMdl.AR{1,1:6}; eye(8*5) zeros(8*5,8)];% 
 eig_companion_form=eig(A_companion_form);
 abs(eig_companion_form);
+AICs=lag_order_selection(factors,12);
 
 C(1:8,1:8)=eye(8);
 years=5;
@@ -217,19 +219,22 @@ plot(B(7,3:8:480));
 plot(B(8,3:8:480));
 plot(observed_variables_irf(79,3:8:480));
 %Now we will do Yamamoto (2016)
-factors_starting_values=factors(1,:);
-state_equation_residuals=E(:,9);
+factors_starting_values=factors(1:6,:);
+state_equation_residuals=E(:,9:16);
 state_equation_residuals=table2array(state_equation_residuals)-mean(table2array(state_equation_residuals));
 n_bootstrap_samples=1000;
 bootstrap_factors=zeros(size(factors,1),size(factors,2),n_bootstrap_samples);
 for z=1:n_bootstrap_samples
 bootstrap_sample_points=randsample((size(state_equation_residuals,1)),(size(state_equation_residuals,1)));
 state_equation_bootstrap_residuals=state_equation_residuals(bootstrap_sample_points,:);
-bootstrap_factors(1,:,z)=table2array(factors_starting_values);
-estimated_AR=[EstMdl.AR{1,1}];
-for i=1:(size(bootstrap_factors,1)-12)
-    internal_sum=estimated_AR(1:8,1:8)*bootstrap_factors((i),:,z)';
-   bootstrap_factors(i+12,:,z)= internal_sum+state_equation_bootstrap_residuals(i,:)';
+bootstrap_factors(1:6,:,z)=table2array(factors_starting_values);
+estimated_AR=[EstMdl.AR{1,1:6}];
+for i=1:(size(bootstrap_factors,1)-6)
+    internal_sum=estimated_AR(1:8,1:8)*bootstrap_factors((i+5),:,z)';
+    for j=1:5
+        internal_sum=internal_sum+estimated_AR(1:8,(1+8*j):(8+8*j))*bootstrap_factors((i+5),:,z)';
+    end
+   bootstrap_factors(i+6,:,z)= internal_sum+state_equation_bootstrap_residuals(i,:)';
 end
 end
 plot(bootstrap_factors(:,6,100));
@@ -270,13 +275,13 @@ plot(table2array(observables(:,50)));
 
 tic;
 for z=1:n_bootstrap_samples
-Mdl = varm(8,1);
+Mdl = varm(8,6);
 EstMdl = estimate(Mdl,bootstrap_factors(:,:,z));
 var=summarize(EstMdl);
 resid_covariance=var.Covariance;
 H=chol(resid_covariance,'lower')*diag(diag(chol(resid_covariance,'lower')).^2)^(-1/2);
 E = infer(EstMdl,bootstrap_factors(:,:,z));
-A_companion_form =[EstMdl.AR{1,1}];%; eye(8*11) zeros(8*11,8)];% 
+A_companion_form =[EstMdl.AR{1,1:6}; eye(8*5) zeros(8*5,8)];% 
 eig_companion_form=eig(A_companion_form);
 abs(eig_companion_form);
 

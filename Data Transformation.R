@@ -94,6 +94,7 @@ data_updated[,2]%>%log()%>%diff()%>%pp.test()
 ip_final_non_stationary <- data_updated[,2]%>%log()%>%diff()*100
 colnames(ip_final_non_stationary)<-colnames(data_updated)[2]
 
+
 data_stationary <- merge(data_stationary,ip_final_non_stationary)
 colnames(data_stationary)<-colnames(data_updated)[1:2]
 
