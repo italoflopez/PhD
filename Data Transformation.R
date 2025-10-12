@@ -33,6 +33,11 @@ library(timetk)
 
 library(data.table)
 
+setwd("C://Users//Italo//OneDrive//Documents//PhD//PhD//First")
+
+source("C://Users//Italo//OneDrive//Documents//PhD//PhD//First//plotly_simple.R")
+
+
 data%>%tail(30)
 
 #First remove variables that have NAs at the end of the sample
@@ -72,10 +77,10 @@ data_updated[,1]%>%log()%>%diff()%>%kpss.test()
 data_updated[,1]%>%log()%>%diff()%>%pp.test()
 
 ip_stationary <- data_updated[,1]%>%log()%>%diff()*100
-colnames(ip_stationary)<-colnames(data_updated)[1]
+#colnames(ip_stationary)<-colnames(data_updated)[1]
 
 data_stationary <- ip_stationary
-colnames(data_stationary)<-colnames(data_updated)[1]
+#colnames(data_stationary)<-colnames(data_updated)[1]
 
 colnames(data_updated)[2]
 
@@ -92,7 +97,7 @@ data_updated[,2]%>%log()%>%diff()%>%kpss.test()
 data_updated[,2]%>%log()%>%diff()%>%pp.test()
 
 ip_final_non_stationary <- data_updated[,2]%>%log()%>%diff()*100
-colnames(ip_final_non_stationary)<-colnames(data_updated)[2]
+#colnames(ip_final_non_stationary)<-colnames(data_updated)[2]
 
 
 data_stationary <- merge(data_stationary,ip_final_non_stationary)
@@ -113,7 +118,7 @@ data_updated[,3]%>%log()%>%diff()%>%kpss.test()
 data_updated[,3]%>%log()%>%diff()%>%pp.test()
 
 ip_final_stationary <- data_updated[,3]%>%log()%>%diff()*100
-colnames(ip_final_stationary)<-colnames(data_updated)[3]
+#colnames(ip_final_stationary)<-colnames(data_updated)[3]
 
 data_stationary <- merge(data_stationary,ip_final_stationary)
 colnames(data_stationary)[3]<-colnames(data_updated)[3]
@@ -133,7 +138,7 @@ data_updated[,4]%>%log()%>%diff()%>%kpss.test()
 data_updated[,4]%>%log()%>%diff()%>%pp.test()
 
 ip_cons_stationary <- data_updated[,4]%>%log()%>%diff()*100
-colnames(ip_cons_stationary)<-colnames(data_updated)[4]
+#colnames(ip_cons_stationary)<-colnames(data_updated)[4]
 
 data_stationary <- merge(data_stationary,ip_cons_stationary)
 colnames(data_stationary)[4]<-colnames(data_updated)[4]
@@ -153,7 +158,7 @@ data_updated[,5]%>%log()%>%diff()%>%kpss.test()
 data_updated[,5]%>%log()%>%diff()%>%pp.test()
 
 ip_cons_dur_stationary <- data_updated[,5]%>%log()%>%diff()*100
-colnames(ip_cons_dur_stationary )<-colnames(data_updated)[5]
+#colnames(ip_cons_dur_stationary )<-colnames(data_updated)[5]
 
 data_stationary <- merge(data_stationary,ip_cons_dur_stationary )
 colnames(data_stationary)[5]<-colnames(data_updated)[5]
@@ -173,7 +178,7 @@ data_updated[,6]%>%log()%>%diff()%>%kpss.test()
 data_updated[,6]%>%log()%>%diff()%>%pp.test()
 
 ip_cons_non_dur_stationary <- data_updated[,6]%>%log()%>%diff()*100
-colnames(ip_cons_non_dur_stationary)<-colnames(data_updated)[6]
+#colnames(ip_cons_non_dur_stationary)<-colnames(data_updated)[6]
 
 data_stationary <- merge(data_stationary,ip_cons_non_dur_stationary)
 colnames(data_stationary)[6]<-colnames(data_updated)[6]
@@ -193,7 +198,7 @@ data_updated[,7]%>%log()%>%diff()%>%kpss.test()
 data_updated[,7]%>%log()%>%diff()%>%pp.test()
 
 ip_equip_bus_stationary <- data_updated[,7]%>%log()%>%diff()*100
-colnames(ip_equip_bus_stationary)<-colnames(data_updated)[7]
+#colnames(ip_equip_bus_stationary)<-colnames(data_updated)[7]
 
 data_stationary <- merge(data_stationary,ip_equip_bus_stationary)
 colnames(data_stationary)[7]<-colnames(data_updated)[7]
@@ -213,7 +218,7 @@ data_updated[,8]%>%log()%>%diff()%>%kpss.test()
 data_updated[,8]%>%log()%>%diff()%>%pp.test()
 
 ip_mat_stationary <- data_updated[,8]%>%log()%>%diff()*100
-colnames(ip_mat_stationary)<-colnames(data_updated)[8]
+#colnames(ip_mat_stationary)<-colnames(data_updated)[8]
 
 data_stationary <- merge(data_stationary,ip_mat_stationary)
 colnames(data_stationary)[8]<-colnames(data_updated)[8]
@@ -233,7 +238,7 @@ data_updated[,9]%>%log()%>%diff()%>%kpss.test()
 data_updated[,9]%>%log()%>%diff()%>%pp.test()
 
 ip_manu_stationary <- data_updated[,9]%>%log()%>%diff()*100
-colnames(ip_manu_stationary)<-colnames(data_updated)[9]
+#colnames(ip_manu_stationary)<-colnames(data_updated)[9]
 
 data_stationary <- merge(data_stationary,ip_manu_stationary)
 colnames(data_stationary)[9]<-colnames(data_updated)[9]
@@ -253,7 +258,7 @@ data_updated[,10]%>%log()%>%diff()%>%kpss.test()
 data_updated[,10]%>%log()%>%diff()%>%pp.test()
 
 ip_manu_dur_stationary <- data_updated[,10]%>%log()%>%diff()*100
-colnames(ip_manu_dur_stationary)<-colnames(data_updated)[10]
+#colnames(ip_manu_dur_stationary)<-colnames(data_updated)[10]
 
 data_stationary <- merge(data_stationary,ip_manu_dur_stationary)
 colnames(data_stationary)[10]<-colnames(data_updated)[10]
@@ -273,7 +278,7 @@ data_updated[,11]%>%log()%>%diff()%>%kpss.test()
 data_updated[,11]%>%log()%>%diff()%>%pp.test()
 
 ip_manu_nondur_stationary <- data_updated[,11]%>%log()%>%diff()*100
-colnames(ip_manu_nondur_stationary)<-colnames(data_updated)[11]
+#colnames(ip_manu_nondur_stationary)<-colnames(data_updated)[11]
 
 data_stationary <- merge(data_stationary,ip_manu_nondur_stationary)
 colnames(data_stationary)[11]<-colnames(data_updated)[11]
@@ -293,7 +298,7 @@ data_updated[,12]%>%log()%>%diff()%>%kpss.test()
 data_updated[,12]%>%log()%>%diff()%>%pp.test()
 
 ip_ener_stationary <- data_updated[,12]%>%log()%>%diff()*100
-colnames(ip_ener_stationary)<-colnames(data_updated)[12]
+#colnames(ip_ener_stationary)<-colnames(data_updated)[12]
 
 data_stationary <- merge(data_stationary,ip_ener_stationary)
 colnames(data_stationary)[12]<-colnames(data_updated)[12]
@@ -313,7 +318,7 @@ data_updated[,13]%>%log()%>%diff()%>%kpss.test()
 data_updated[,13]%>%log()%>%diff()%>%pp.test()
 
 ip_non_ener_stationary <- data_updated[,13]%>%log()%>%diff()*100
-colnames(ip_non_ener_stationary)<-colnames(data_updated)[13]
+#colnames(ip_non_ener_stationary)<-colnames(data_updated)[13]
 
 data_stationary <- merge(data_stationary,ip_non_ener_stationary)
 colnames(data_stationary)[13]<-colnames(data_updated)[13]
@@ -333,7 +338,7 @@ data_updated[,14]%>%log()%>%diff()%>%kpss.test()
 data_updated[,14]%>%log()%>%diff()%>%pp.test()
 
 ip_comp_comm_semi_stationary <- data_updated[,14]%>%log()%>%diff()*100
-colnames(ip_comp_comm_semi_stationary)<-colnames(data_updated)[14]
+#colnames(ip_comp_comm_semi_stationary)<-colnames(data_updated)[14]
 
 data_stationary <- merge(data_stationary,ip_comp_comm_semi_stationary)
 colnames(data_stationary)[14]<-colnames(data_updated)[14]
@@ -353,7 +358,7 @@ data_updated[,15]%>%log()%>%diff()%>%kpss.test()
 data_updated[,15]%>%log()%>%diff()%>%pp.test()
 
 ip_non_ener_excl_ccs_and_mvp_stationary <- data_updated[,15]%>%log()%>%diff()*100
-colnames(ip_non_ener_excl_ccs_and_mvp_stationary)<-colnames(data_updated)[15]
+#colnames(ip_non_ener_excl_ccs_and_mvp_stationary)<-colnames(data_updated)[15]
 
 data_stationary <- merge(data_stationary,ip_non_ener_excl_ccs_and_mvp_stationary)
 colnames(data_stationary)[15]<-colnames(data_updated)[15]
@@ -373,7 +378,7 @@ data_updated[,16]%>%log()%>%diff()%>%kpss.test()
 data_updated[,16]%>%log()%>%diff()%>%pp.test()
 
 cap_util_total_stationary <- data_updated[,16]%>%log()%>%diff()*100
-colnames(cap_util_total_stationary)<-colnames(data_updated)[16]
+#colnames(cap_util_total_stationary)<-colnames(data_updated)[16]
 
 data_stationary <- merge(data_stationary,cap_util_total_stationary)
 colnames(data_stationary)[16]<-colnames(data_updated)[16]
@@ -393,7 +398,7 @@ data_updated[,17]%>%log()%>%diff()%>%kpss.test()
 data_updated[,17]%>%log()%>%diff()%>%pp.test()
 
 cap_util_manu_stationary <- data_updated[,17]%>%log()%>%diff()*100
-colnames(cap_util_manu_stationary)<-colnames(data_updated)[17]
+#colnames(cap_util_manu_stationary)<-colnames(data_updated)[17]
 
 data_stationary <- merge(data_stationary,cap_util_manu_stationary)
 colnames(data_stationary)[17]<-colnames(data_updated)[17]
@@ -413,7 +418,7 @@ data_updated[,18]%>%log()%>%diff()%>%kpss.test()
 data_updated[,18]%>%log()%>%diff()%>%pp.test()
 
 cap_util_manu_dur_stationary <- data_updated[,18]%>%log()%>%diff()*100
-colnames(cap_util_manu_dur_stationary)<-colnames(data_updated)[18]
+#colnames(cap_util_manu_dur_stationary)<-colnames(data_updated)[18]
 
 data_stationary <- merge(data_stationary,cap_util_manu_dur_stationary)
 colnames(data_stationary)[18]<-colnames(data_updated)[18]
@@ -433,7 +438,7 @@ data_updated[,19]%>%log()%>%diff()%>%kpss.test()
 data_updated[,19]%>%log()%>%diff()%>%pp.test()
 
 cap_util_manu_nondur_stationary <- data_updated[,19]%>%log()%>%diff()*100
-colnames(cap_util_manu_nondur_stationary)<-colnames(data_updated)[19]
+#colnames(cap_util_manu_nondur_stationary)<-colnames(data_updated)[19]
 
 data_stationary <- merge(data_stationary,cap_util_manu_nondur_stationary)
 colnames(data_stationary)[19]<-colnames(data_updated)[19]
@@ -453,7 +458,7 @@ data_updated[,20]%>%log()%>%diff()%>%kpss.test()
 data_updated[,20]%>%log()%>%diff()%>%pp.test()
 
 cap_util_comp_comm_semi_stationary <- data_updated[,20]%>%log()%>%diff()*100
-colnames(cap_util_comp_comm_semi_stationary)<-colnames(data_updated)[20]
+#colnames(cap_util_comp_comm_semi_stationary)<-colnames(data_updated)[20]
 
 data_stationary <- merge(data_stationary,cap_util_comp_comm_semi_stationary)
 colnames(data_stationary)[20]<-colnames(data_updated)[20]
@@ -473,7 +478,7 @@ data_updated[,21]%>%log()%>%diff()%>%kpss.test()
 data_updated[,21]%>%log()%>%diff()%>%pp.test()
 
 employ_total_stationary <- data_updated[,21]%>%log()%>%diff()*100
-colnames(employ_total_stationary)<-colnames(data_updated)[21]
+#colnames(employ_total_stationary)<-colnames(data_updated)[21]
 
 data_stationary <- merge(data_stationary,employ_total_stationary)
 colnames(data_stationary)[21]<-colnames(data_updated)[21]
@@ -493,7 +498,7 @@ data_updated[,22]%>%log()%>%diff()%>%kpss.test()
 data_updated[,22]%>%log()%>%diff()%>%pp.test()
 
 avg_week_unemploy_stationary <- data_updated[,22]%>%log()%>%diff()*100
-colnames(avg_week_unemploy_stationary)<-colnames(data_updated)[22]
+#colnames(avg_week_unemploy_stationary)<-colnames(data_updated)[22]
 
 data_stationary <- merge(data_stationary,avg_week_unemploy_stationary)
 colnames(data_stationary)[22]<-colnames(data_updated)[22]
@@ -513,7 +518,7 @@ data_updated[,23]%>%log()%>%diff()%>%kpss.test()
 data_updated[,23]%>%log()%>%diff()%>%pp.test()
 
 unemploy_less_5_stationary <- data_updated[,23]
-colnames(unemploy_less_5_stationary)<-colnames(data_updated)[23]
+#colnames(unemploy_less_5_stationary)<-colnames(data_updated)[23]
 
 data_stationary <- merge(data_stationary,unemploy_less_5_stationary)
 colnames(data_stationary)[23]<-colnames(data_updated)[23]
@@ -533,7 +538,7 @@ data_updated[,24]%>%log()%>%diff()%>%kpss.test()
 data_updated[,24]%>%log()%>%diff()%>%pp.test()
 
 unemploy_5_14_stationary <- data_updated[,24]
-colnames(unemploy_5_14_stationary)<-colnames(data_updated)[24]
+#colnames(unemploy_5_14_stationary)<-colnames(data_updated)[24]
 
 data_stationary <- merge(data_stationary,unemploy_5_14_stationary)
 colnames(data_stationary)[24]<-colnames(data_updated)[24]
@@ -1150,14 +1155,14 @@ data_updated[,57]%>%adf.test()
 data_updated[,57]%>%kpss.test()
 data_updated[,57]%>%pp.test()
 
-data_updated[,57]%>%log()%>%diff()
-plotly_simple(data_updated[,57]%>%log()%>%diff(),colnames(data_updated)[57])
+data_updated[,57]%>%growth.rate(lag = 1,simple = T)
+plotly_simple(data_updated[,57]%>%growth.rate(lag = 1,simple = T),colnames(data_updated)[57])
 
-data_updated[,57]%>%log()%>%diff()%>%adf.test()
-data_updated[,57]%>%log()%>%diff()%>%kpss.test()
-data_updated[,57]%>%log()%>%diff()%>%pp.test()
+data_updated[,57]%>%growth.rate(lag = 1,simple = T)%>%adf.test()
+data_updated[,57]%>%growth.rate(lag = 1,simple = T)%>%kpss.test()
+data_updated[,57]%>%growth.rate(lag = 1,simple = T)%>%pp.test()
 
-reser_depo_inst_stationary <- data_updated[,57]%>%log()%>%diff()*100
+reser_depo_inst_stationary <- data_updated[,57]%>%growth.rate(lag = 1,simple = T)
 
 data_stationary <- merge(data_stationary,reser_depo_inst_stationary)
 colnames(data_stationary)[57]<-colnames(data_updated)[57]
@@ -1169,12 +1174,12 @@ data_updated[,58]%>%adf.test()
 data_updated[,58]%>%kpss.test()
 data_updated[,58]%>%pp.test()
 
-data_updated[,58]%>%log()%>%diff()
-plotly_simple(data_updated[,58]%>%log()%>%diff(),colnames(data_updated)[58])
-
-data_updated[,58]%>%log()%>%diff()%>%adf.test()
-data_updated[,58]%>%log()%>%diff()%>%kpss.test()
-data_updated[,58]%>%log()%>%diff()%>%pp.test()
+# data_updated[,58]%>%log()%>%diff()
+# plotly_simple(data_updated[,58]%>%log()%>%diff(),colnames(data_updated)[58])
+# 
+# data_updated[,58]%>%log()%>%diff()%>%adf.test()
+# data_updated[,58]%>%log()%>%diff()%>%kpss.test()
+# data_updated[,58]%>%log()%>%diff()%>%pp.test()
 
 reser_depo_inst_nonborrowed_stationary <- data_updated[,58]%>%growth.rate(lag = 1,simple = T)
 reser_depo_inst_nonborrowed_stationary <-reser_depo_inst_nonborrowed_stationary%>%as.zoo()
@@ -1546,24 +1551,78 @@ colnames(data_stationary)[77]<-colnames(data_updated)[77]
 
 colnames(data_updated)[78]
 
-plotly_simple(data_updated[,78],colnames(data_updated)[78])
-data_updated[,78]%>%adf.test()
-data_updated[,78]%>%kpss.test()
-data_updated[,78]%>%pp.test()
+# plotly_simple(data_updated[,78],colnames(data_updated)[78])
+# data_updated[,78]%>%adf.test()
+# data_updated[,78]%>%kpss.test()
+# data_updated[,78]%>%pp.test()
+# 
+# data_updated[,78]%>%log()%>%diff()
+# plotly_simple(data_updated[,78]%>%growth.rate(lag = 1,simple = T),colnames(data_updated)[78])
+# 
+# data_updated[,78]%>%growth.rate(lag = 1,simple = T)%>%adf.test()
+# data_updated[,78]%>%growth.rate(lag = 1,simple = T)%>%kpss.test()
+# data_updated[,78]%>%growth.rate(lag = 1,simple = T)%>%pp.test()
 
-data_updated[,78]%>%log()%>%diff()
-plotly_simple(data_updated[,78]%>%growth.rate(lag = 1,simple = T),colnames(data_updated)[78])
-
-data_updated[,78]%>%growth.rate(lag = 1,simple = T)%>%adf.test()
-data_updated[,78]%>%growth.rate(lag = 1,simple = T)%>%kpss.test()
-data_updated[,78]%>%growth.rate(lag = 1,simple = T)%>%pp.test()
-
-federal_surplus_stationary <- data_updated[,78]%>%growth.rate(lag = 1,simple = T)
+federal_surplus_stationary <- data_updated[,78]%>%as.zoo()%>%growth.rate(lag = 1,simple = T)
 federal_surplus_stationary <- federal_surplus_stationary%>%as.zoo()
 index(federal_surplus_stationary) <- as.yearmon(index(federal_surplus_stationary))
 
 data_stationary <- merge(data_stationary,federal_surplus_stationary)
 colnames(data_stationary)[78]<-colnames(data_updated)[78]
+
+#New
+avg_hour_earn_production_and_nonsupervisory_stationary <- data_updated[,79]%>%as.zoo()%>%diff()
+avg_hour_earn_production_and_nonsupervisory_stationary <- avg_hour_earn_production_and_nonsupervisory_stationary%>%as.zoo()
+index(avg_hour_earn_production_and_nonsupervisory_stationary) <- as.yearmon(index(avg_hour_earn_production_and_nonsupervisory_stationary))
+
+data_stationary <- merge(data_stationary,avg_hour_earn_production_and_nonsupervisory_stationary)
+colnames(data_stationary)[79]<-colnames(data_updated)[79]
+
+avg_hour_earn_production_and_nonsupervisory_manu_stationary <- data_updated[,80]%>%diff()
+avg_hour_earn_production_and_nonsupervisory_manu_stationary <- avg_hour_earn_production_and_nonsupervisory_manu_stationary%>%as.zoo()
+index(avg_hour_earn_production_and_nonsupervisory_manu_stationary) <- as.yearmon(index(avg_hour_earn_production_and_nonsupervisory_manu_stationary))
+
+data_stationary <- merge(data_stationary,avg_hour_earn_production_and_nonsupervisory_manu_stationary)
+colnames(data_stationary)[80]<-colnames(data_updated)[80]
+
+avg_hour_earn_production_and_nonsupervisory_durables_stationary <- data_updated[,81]%>%diff()
+avg_hour_earn_production_and_nonsupervisory_durables_stationary <- avg_hour_earn_production_and_nonsupervisory_durables_stationary%>%as.zoo()
+index(avg_hour_earn_production_and_nonsupervisory_durables_stationary) <- as.yearmon(index(avg_hour_earn_production_and_nonsupervisory_durables_stationary))
+
+data_stationary <- merge(data_stationary,avg_hour_earn_production_and_nonsupervisory_durables_stationary)
+colnames(data_stationary)[81]<-colnames(data_updated)[81]
+
+avg_hour_earn_production_and_nonsupervisory_construction_stationary <- data_updated[,82]%>%diff()
+avg_hour_earn_production_and_nonsupervisory_construction_stationary <- avg_hour_earn_production_and_nonsupervisory_construction_stationary%>%as.zoo()
+index(avg_hour_earn_production_and_nonsupervisory_construction_stationary) <- as.yearmon(index(avg_hour_earn_production_and_nonsupervisory_construction_stationary))
+
+data_stationary <- merge(data_stationary,avg_hour_earn_production_and_nonsupervisory_construction_stationary)
+colnames(data_stationary)[82]<-colnames(data_updated)[82]
+
+
+rate_3_month_cd_stationary <- data_updated[,83]%>%diff()
+rate_3_month_cd_stationary <- rate_3_month_cd_stationary%>%as.zoo()
+index(rate_3_month_cd_stationary) <- as.yearmon(index(rate_3_month_cd_stationary))
+
+data_stationary <- merge(data_stationary,rate_3_month_cd_stationary)
+colnames(data_stationary)[83]<-colnames(data_updated)[83]
+
+rate_personal_loans_24_months_stationary <- data_updated[,84]%>%diff()
+rate_personal_loans_24_months_stationary <- rate_personal_loans_24_months_stationary%>%as.zoo()
+index(rate_personal_loans_24_months_stationary) <- as.yearmon(index(rate_personal_loans_24_months_stationary))
+
+data_stationary <- merge(data_stationary,rate_personal_loans_24_months_stationary)
+colnames(data_stationary)[84]<-colnames(data_updated)[84]
+
+
+unemployment_rate_stationary <- data_updated[,85]%>%diff()#Lo cambié a diff()
+unemployment_rate_stationary <- unemployment_rate_stationary%>%as.zoo()
+index(unemployment_rate_stationary) <- as.yearmon(index(unemployment_rate_stationary))
+
+data_stationary <- merge(data_stationary,unemployment_rate_stationary)
+colnames(data_stationary)[85]<-colnames(data_updated)[85]
+
+#End New
 
 data_stationary <- data_stationary[complete.cases(data_stationary),]
 index(data_stationary)<-as.Date(index(data_stationary))
@@ -1584,9 +1643,9 @@ index(data_stationary)<-as.Date(index(data_stationary))
 # 
 setwd("C://Users//Italo//Documents//PhD//PhD//First")
 # 
-write.csv(as.data.frame(data_stationary),"stationary_data_for_macro_factors.csv")
+write.csv(as.data.frame(data_stationary),"stationary_data_for_macro_factors_4.csv")
 # index(ffr)<-as.Date(index(ffr))
 
-write.csv(as.data.frame(ffr),"ffr.csv")
+#write.csv(as.data.frame(ffr),"ffr.csv")
 
 #data_transformed_attributes<-data_transformed%>%attributes()

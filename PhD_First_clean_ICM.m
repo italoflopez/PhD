@@ -1,34 +1,30 @@
-%First Paper code
-yield_data=readtable("C:\Users\Italo\Documents\PhD\PhD\USD Zero Coupon Yields.xlsx");
+cd("C:\Users\Italo\OneDrive\Documents\PhD\PhD\First")
+addpath('C:\Users\Italo\OneDrive\Documents\PhD\PhD\First\ddisk\matlab');
+%Retrieveing yield data
+yield_data=readtable("C:\Users\Italo\OneDrive\Documents\PhD\PhD\USD Zero Coupon Yields.xlsx");
+
 yield_data=yield_data(3:height(yield_data),:);
-%yield_data=table2timetable(yield_data);
+
+
+%Putting yield data in timetable format
 t1 = datetime(1989,3,1);
 t2 = datetime(2022,6,1);
 t = t1:calmonths(1):t2;
 t3 = datetime(1989,3,1);
-t4 = datetime(2002,12,1);
+t4 = datetime(2007,12,1);
 t_l = t3:calmonths(1):t4;
+t5 = datetime(2015,1,1);
+t_last = t5:calmonths(1):t2;
+start_t_last=t1:calmonths(1):t5;
 
-yield_data=table2timetable([table(datetime(t','Format','yyyyMM')), yield_data(:,2:size(yield_data,2))]);
-% timevals=yield_data(1:120,:);
-% yield_data=yield_data((length(t_l):size(yield_data,1)),:);
-%macro_data=readtable("C:\Users\Italo\Documents\PhD\PhD\final_macro_data.csv");
-lambda=0.0609;
-maturity=[3, 6, 12, 24, 36, 48, 60, 72, 84, 96, 108, 120, 180, 240, 360];
-factor_loading_beta1 = ones(1,length(maturity));
-factor_loading_beta2 = (1-exp(-lambda*maturity))./(lambda*maturity);
-factor_loading_beta3 = (1-exp(-lambda*maturity))./(lambda*maturity)-exp(-lambda*maturity);
-%Nelson-Siegel Factor Loadings
-ns_factor_loadings = [ones(1,length(maturity)); (1-exp(-lambda*maturity))./(lambda*maturity); (1-exp(-lambda*maturity))./(lambda*maturity)-exp(-lambda*maturity)]';
-%Nelson-Siegel Factors
-matrix_inverted_ns=inv(ns_factor_loadings'*ns_factor_loadings);
-for i=1:height(yield_data);
-betas(i,:)=matrix_inverted_ns*ns_factor_loadings'*table2array(yield_data(i,:))';
-end
 
-betas=table2timetable([table(datetime(yield_data.Var1,'Format','yyyyMM')), array2table(betas)]);
 
-%stationarity tests
+yield_data=table2timetable([table(datetime(t','Format','yyyyMM')), yield_data(1:size(t',1),2:size(yield_data,2))]);
+
+
+[betas,ns_factor_loadings] = betas_function(yield_data);
+
+%Plots of the betas
 plot(betas.Var1,betas(:,1).betas1);
 title('Beta 1')
 plot(betas.Var1,betas(:,2).betas2);
@@ -36,6 +32,7 @@ title('Beta 2')
 plot(betas.Var1,betas(:,3).betas3);
 title('Beta 3')
 
+%stationarity tests
 [h,pValue] = adftest(betas(:,1));
 [h,pValue] = adftest(betas(:,2));
 [h,pValue] = adftest(betas(:,3));
@@ -48,93 +45,102 @@ title('Beta 3')
 [h,pValue] = pptest(betas(:,2));
 [h,pValue] = pptest(betas(:,3));
 
-table_betas=array2table([mean(table2array(betas))' min(table2array(betas))' max(table2array(betas))' std(table2array(betas))' [adftest(betas(:,1)).pValue adftest(betas(:,2)).pValue adftest(betas(:,3)).pValue]'])
-table_betas.Properties.VariableNames = ["Mean","Minimum","Maximum","Satndard Deviation","ADF test p-value"]
-table_betas=[array2table(["Beta 1","Beta 2","Beta 3"]') table_betas];
-table_betas.Properties.VariableNames(1)="Factor"
+
+table_betas=table_betas_function(betas)
 writetable(table_betas,'betas_table.xlsx');
 
-stationary_betas=array2table([diff(table2array(betas(:,1:2))) diff(table2array(betas(:,end)))]);
+
+stationary_betas=array2table([diff(table2array(betas(:,1:2))) table2array(betas(2:end,end))]);
 stationary_betas = renamevars(stationary_betas,["Var1","Var2","Var3"],["Beta1","Beta2","Beta3"]); 
 stationary_betas=table2timetable([table(datetime(yield_data(2:end,:).Var1,'Format','yyyyMM')), stationary_betas]);
 
-estimated_yield_curve=ns_factor_loadings*table2array(betas)';
-estimated_yield_curve=estimated_yield_curve';
-yield_residuals=table2array(yield_data)-estimated_yield_curve;
-yield_residuals=table2timetable([table(datetime(yield_data.Var1,'Format','yyyyMM')), array2table(yield_residuals)]);
-yield_residuals.Properties.VariableNames=yield_data.Properties.VariableNames
+
+[estimated_yield_curve,yield_residuals]=yield_residuals_function(yield_data,ns_factor_loadings,betas);
 surf(table2array(yield_residuals));
 title('Yield Curve Residuals');
-estimated_yield_curve=array2timetable(array2table(estimated_yield_curve),'RowTimes', datetime(yield_data.Var1,'Format','yyyyMM'));
 
 macro_data=readtable("C:\Users\Italo\Documents\PhD\PhD\First\stationary_data_for_macro_factors.csv");
 macro_data=table2timetable([table(datetime(macro_data.Var1,'Format','yyyy-MM-dd')), macro_data(:,2:size(macro_data,2))]);
 [coeff,score,latent,tsquared,explained,mu] = pca(zscore(table2array(macro_data)));
-macro_factors=zscore(table2array(macro_data))*coeff;
-macro_factors=array2timetable(macro_factors,'RowTimes', datetime(macro_data.Var1,'Format','yyyyMM'));
-plot(macro_factors.Time,macro_factors.macro_factors1);
-plot(macro_factors.Time,macro_factors.macro_factors1);
+pca_macro_factors=zscore(table2array(macro_data))*coeff;
+pca_macro_factors=array2timetable(pca_macro_factors,'RowTimes', datetime(macro_data.Var1,'Format','yyyyMM'));
+
+
+plot(pca_macro_factors.Time,pca_macro_factors.pca_macro_factors1);
 hold on 
-plot(macro_factors.Time,macro_factors.macro_factors2);
+plot(pca_macro_factors.Time,pca_macro_factors.pca_macro_factors2);
 hold on
-plot(macro_factors.Time,macro_factors.macro_factors3);
+plot(pca_macro_factors.Time,pca_macro_factors.pca_macro_factors3);
 hold on
-plot(macro_factors.Time,macro_factors.macro_factors4);
+plot(pca_macro_factors.Time,pca_macro_factors.pca_macro_factors4);
 
-std(table2array(macro_factors));
-macro_factors=macro_factors(:,1:4);
-%fmincon with symbolic math toolbox tryout
-x=sym('x',[10 1])
-matlabFunction(x.^2'*x,'vars',{x},'file','objfunction');
-fmincon(@objfunction,zeros(10,1));
+proportion_of_variances = std(table2array(pca_macro_factors))/sum(std(table2array(pca_macro_factors)))*100
+sum(proportion_of_variances)
+cumsum(proportion_of_variances)
+sum(proportion_of_variances(1:4))
+pca_macro_factors=pca_macro_factors(:,1:4);
 
-%let's try ols with fmincon and symbolic math toolbox
-% x=sym('x',[2 1]);
-% matlabFunction((table2array(yield_data(:,1))-[table2array(yield_data(:,2)) ones(400,1)]*x)'*(table2array(yield_data(:,1))-[table2array(yield_data(:,2)) ones(400,1)]*x),'vars',{x},'file','objfunction');
-% fmincon(@objfunction,zeros(2,1));
-% 
-%let's try pca with fmincon and symbolic math toolbox for the macro data
-% with four factors
-% parpool('Threads')
-% x=sym('x',[(size(macro_data,2)+size(macro_data,1)) 4]);
-% tic;
-% matlabFunction((table2array(macro_data)'-x(1:size(macro_data,2),1:4)*x((size(macro_data,2)+1):(end),1:4)')'*(table2array(macro_data)'-x(1:size(macro_data,2),1:4)*x((size(macro_data,2)+1):(end),1:4)'),'vars',{x},'file','objfunction');
-% toc
-%selecting slow moving variables
-shadow_rate=readtable("C:\Users\Italo\Documents\PhD\PhD\First\shadow_rate.xlsx");
-shadow_rate=table2timetable([table(datetime(char(shadow_rate{:,1}),'Format','yyyyMM')), shadow_rate(:,2:size(shadow_rate,2))]);
-diff_shadow_rate = diff(table2array(shadow_rate));
-diff_shadow_rate = array2timetable(diff_shadow_rate,'RowTimes',shadow_rate(2:end,:).Var1);
 
-data=synchronize(macro_data,diff_shadow_rate,stationary_betas);
+ffr=readtable("C:\Users\Italo\Documents\PhD\PhD\ffr.csv");
+ffr=table2timetable([table(datetime(char(ffr{:,1}),'Format','yyyyMM')), ffr(:,2:size(ffr,2))]);
+
+icm=readtable("C:\Users\Italo\Documents\PhD\PhD\First\Shadow_FFR_1221.xlsx");
+icm=table2timetable([table(datetime(char(icm{:,1}),'Format','yyyyMM')), icm(:,2:size(icm,2))]);
+
+values = ffr.EffectiveFederalFundsRate;
+
+cutoffDate = datetime(icm.Var1(end));
+
+belowThreshold = ffr(values < 0.25 & ffr.Var1 < cutoffDate, :);
+
+ffr_icm = ffr;
+
+for_dates = ffr_icm(values < 0.25 & ffr_icm.Var1 < cutoffDate, :)
+
+valuesForDesiredDate = icm.Shadow_FFR(ismember(icm.Var1, for_dates.Var1));
+
+ffr_icm(values < 0.25 & ffr_icm.Var1 < cutoffDate, :) = array2table(valuesForDesiredDate);
+
+data=synchronize(macro_data,ffr_icm,betas);
 data=rmmissing(data);
 macro_data=data(:,1:78);
 
 slow_moving_variables=macro_data(:,2:47);
 slow_moving_variables=[slow_moving_variables macro_data(:,59)];
 slow_moving_variables=[slow_moving_variables macro_data(:,61:78)];
+
+
 [coeff,score,latent,tsquared,explained,mu] = pca(zscore(table2array(slow_moving_variables)));
+slow_macro_factors=zscore(table2array(slow_moving_variables))*coeff;
+number_of_slow_factors=2;
+slow_macro_factors=slow_macro_factors(:,1:number_of_slow_factors);
+slow_macro_factors=array2timetable(array2table(slow_macro_factors),'RowTimes', datetime(macro_data.Var1,'Format','yyyyMM'));
+std(table2array(table2array(slow_macro_factors)))
+
+
 bar(explained)
 ylabel('Marginal R2')
 xlabel('Number of factors')
-slow_macro_factors=zscore(table2array(slow_moving_variables))*coeff;
-number_of_slow_factors=3;
-slow_macro_factors=slow_macro_factors(:,1:number_of_slow_factors);
-slow_macro_factors=array2timetable(array2table(slow_macro_factors),'RowTimes', datetime(macro_data.Var1,'Format','yyyyMM'));
-std(table2array(table2array(slow_macro_factors)));
+legend('Marginal R2 for slow-moving variables', 'Location', 'northeast')
 
 plot(slow_macro_factors.Time,table2array(slow_macro_factors.Var1));
 hold on 
 plot(slow_macro_factors.Time,table2array(slow_macro_factors.Var2));
 
+
 fast_moving_variables=macro_data(:,48:58);
 
 [coeff,score,latent,tsquared,explained,mu] = pca(zscore(table2array(fast_moving_variables)));
 fast_macro_factors=zscore(table2array(fast_moving_variables))*coeff;
-number_of_fast_macro_factors=3;
+number_of_fast_macro_factors=2;
 fast_macro_factors=fast_macro_factors(:,1:number_of_fast_macro_factors);
 fast_macro_factors=array2timetable(array2table(fast_macro_factors),'RowTimes', datetime(macro_data.Var1,'Format','yyyyMM'));
-std(table2array(table2array(fast_macro_factors)));
+std(table2array(table2array(fast_macro_factors)))
+
+bar(explained)
+ylabel('Marginal R2')
+xlabel('Number of factors')
+legend('Marginal R2 for fast-moving variables', 'Location', 'northeast')
 
 plot(fast_macro_factors.Time,table2array(fast_macro_factors.Var1));
 hold on 
@@ -145,6 +151,8 @@ slow_moving_variables=[slow_moving_variables(:,1) slow_moving_variables(:,48) sl
 %reordering fast moving variables
 fast_moving_variables=[fast_moving_variables(:,1) fast_moving_variables(:,6) fast_moving_variables(:,2:5) fast_moving_variables(:,7:11)];
 matrix_inverted_slow=inv(table2array(table2array(slow_macro_factors))'*table2array(table2array(slow_macro_factors)));
+
+
 for i=1:size(slow_moving_variables,2)
 pca_slow_factor_loadings(:,i)=matrix_inverted_slow*table2array(table2array(slow_macro_factors))'*table2array(slow_moving_variables(:,i));
 end
@@ -153,6 +161,8 @@ matrix_inverted_fast=inv(table2array(table2array(fast_macro_factors))'*table2arr
 for i=1:size(fast_moving_variables,2)
 pca_fast_factor_loadings(:,i)=matrix_inverted_fast*table2array(table2array(fast_macro_factors))'*table2array(fast_moving_variables(:,i));
 end
+
+
 
 number_of_named_slow_macro_factors=2;
 named_slow_macro_factors=table2array(table2array(slow_macro_factors))*pca_slow_factor_loadings(:,1:number_of_named_slow_macro_factors);
@@ -164,10 +174,10 @@ named_fast_macro_factors=table2array(table2array(fast_macro_factors))*pca_fast_f
 %corr(named_fast_macro_factors(:,1),named_fast_macro_factors(:,2));
 named_fast_macro_factors=table2timetable([table(datetime(slow_moving_variables.Var1,'Format','yyyyMM')), array2table(named_fast_macro_factors)]);
 
-regression_factors=synchronize(named_slow_macro_factors,diff_shadow_rate,named_fast_macro_factors);
+regression_factors=synchronize(named_slow_macro_factors,ffr_icm,named_fast_macro_factors);
 regression_factors=rmmissing(regression_factors);
 
-full_sample=synchronize(named_slow_macro_factors,diff_shadow_rate,named_fast_macro_factors,slow_moving_variables,fast_moving_variables);
+full_sample=synchronize(named_slow_macro_factors,ffr_icm,named_fast_macro_factors,slow_moving_variables,fast_moving_variables);
 full_sample=rmmissing(full_sample);
 named_slow_macro_factors=full_sample(:,1:2);
 slow_moving_variables=full_sample(:,6:70);
@@ -196,23 +206,11 @@ end
 fast_variables_residuals=table2array(fast_moving_variables)-fast_variables_hat;
 fast_variables_residuals=array2timetable(fast_variables_residuals,'RowTimes',datetime(fast_moving_variables.Var1,'Format','yyyyMM'));
 
-factors=synchronize(regression_factors,stationary_betas);
+factors=synchronize(regression_factors,betas);
 factors=rmmissing(factors);
-%Estimation of the state equation
-% dummy=[zeros(192,1); ones(size(factors,1)-192,1)]
-% dummy=array2timetable(dummy,'RowTimes', datetime(factors.Var1,'Format','yyyyMM'));
-% factors=synchronize(factors,dummy);
-% factors=rmmissing(factors);
-[argvalue, argmax]=max(table2array(factors(:,1)));
-b_dummy = factors((argmax-5):(argmax+5),1)
-dummy1 = ismember(factors(:,1),b_dummy,'rows');
-[argvalue, argmax]=max(table2array(factors(:,2)));
-b_dummy = factors((argmax+25):(argmax+40),2)
-dummy2 = ismember(factors(:,2),b_dummy,'rows');
-dummies=array2timetable([dummy1 dummy2],'RowTimes',datetime(slow_moving_variables.Var1,'Format','yyyyMM'));
 
 number_of_factors = size(factors,2);
-lag_order = 12;
+lag_order = 5;
 Mdl = varm(number_of_factors,lag_order);
 %EstMdl = estimate(Mdl,table2array(factors),X=double([dummy1 dummy2]));
 % factors = filloutliers(factors,"linear");
@@ -227,24 +225,14 @@ armairf(EstMdl.AR,[],InnovCov=var_summary.Covariance);
 A_companion_form =[EstMdl.AR{1,1:lag_order};eye(number_of_factors*(lag_order-1)) zeros(number_of_factors*(lag_order-1),number_of_factors)];% 
 eig_companion_form=eig(A_companion_form);
 abs(eig_companion_form);
-AICs=lag_order_selection(factors,24);
+AICs=lag_order_selection(factors,12);
 [min_num,min_idx] = min(AICs);
-for i = 1:size(factors,2)
-table_residuals_autocorrelation_test(i,:) = lbqtest(E(:,i));
+for i = 1:number_of_factors
+table_residuals_autocorrelation_test(i,:) = lbqtest(E(:,(i+number_of_factors)));
 end
 table_residuals_autocorrelation_test
-[h,pValue,stat,cValue]=mlbqtest(table2array(E),24);
+[h,pValue,stat,cValue]=mlbqtest(table2array(E(:,(number_of_factors+1):(2*number_of_factors))),24);
 
-plot(E(:,2).Var1,E(:,2).named_slow_macro_factors2)
-autocorr(E(:,2))
-plot(E(:,3).Var1,E(:,3).diff_shadow_rate)
-autocorr(E(:,3))
-plot(E(:,4).Var1,E(:,4).named_fast_macro_factors1)
-autocorr(E(:,4))
-plot(E(:,5).Var1,E(:,5).named_fast_macro_factors2)
-autocorr(E(:,5))
-plot(E(:,8).Var1,E(:,8).Beta3)
-autocorr(E(:,8))
 
 for i = 1:size(factors,2)
    plot(table2array(factors(:,i)))
@@ -264,6 +252,11 @@ B(1:number_of_factors,1:number_of_factors)=inv_H;
 for i=1:(months-1)
 B(1:number_of_factors,(number_of_factors*i+1):(number_of_factors*(i+1)))=C(1:number_of_factors,(number_of_factors*i+1):(number_of_factors*(i+1)))*inv_H;
 end
+
+n_yields = size(yield_data,2);
+n_non_yield_factors = size(factors,2)-size(betas,2);
+n_slow_moving_variables = size(slow_moving_variables,2);
+n_fast_moving_variables = size(fast_moving_variables,2);
 
 yields_loadings=[zeros(15,5), ns_factor_loadings];
 full_named_slow_factor_loadings=[zeros(5,65); named_slow_factor_loadings];
@@ -382,6 +375,7 @@ ylabel('Effect')
 legend('Upper Bound','Point Estimate','Lower Bound')
 yline(0,'--black','HandleVisibility','off')
 
+
 for i=0:59
 irf_standard_deviation(i+1)=std(B_bootstrap(6,(3+8*i)+480*(1:999)));
 end
@@ -394,6 +388,8 @@ plot(0.25*B(6,3+(8*(0:59)))-0.25*irf_standard_deviation*2);
 title('Impulse Response Function: Nelson-Siegel Yield Curve Level')
 xlabel('Time period')
 ylabel('Effect')
+legend('Upper Bound','Point Estimate','Lower Bound')
+yline(0,'--black','HandleVisibility','off')
 
 for i=0:59
 irf_standard_deviation(i+1)=std(B_bootstrap(7,(3+8*i)+480*(1:999)));
@@ -407,6 +403,8 @@ plot(-1*0.25*B(7,3+(8*(0:59)))-0.25*irf_standard_deviation*2);
 title('Impulse Response Function: Nelson-Siegel Yield Curve Slope')
 xlabel('Time period')
 ylabel('Effect')
+legend('Upper Bound','Point Estimate','Lower Bound')
+yline(0,'--black','HandleVisibility','off')
 
 for i=0:59
 irf_standard_deviation(i+1)=std(B_bootstrap(8,(3+8*i)+480*(1:999)));
@@ -420,6 +418,8 @@ plot(0.25*B(8,3+(8*(0:59)))-0.25*irf_standard_deviation*2);
 title('Impulse Response Function: Nelson-Siegel Yield Curve Curvature')
 xlabel('Time period')
 ylabel('Effect')
+legend('Upper Bound','Point Estimate','Lower Bound')
+yline(0,'--black','HandleVisibility','off')
 
 for i=0:59
 irf_standard_deviation(i+1)=std(observed_variables_bootstrap_irf(1,(3+8*i)+480*(1:999)));
@@ -433,6 +433,8 @@ plot(0.25*observed_variables_irf(1,3+(8*(0:59)))-0.25*irf_standard_deviation*2);
 title('Impulse Response Function: Industrial Production, final goods')
 xlabel('Time period')
 ylabel('Effect')
+legend('Upper Bound','Point Estimate','Lower Bound')
+yline(0,'--black','HandleVisibility','off')
 
 for i=0:59
 irf_standard_deviation(i+1)=std(observed_variables_bootstrap_irf(2,(3+8*i)+480*(1:999)));
@@ -446,68 +448,20 @@ plot(0.25*observed_variables_irf(2,3+(8*(0:59)))-0.25*irf_standard_deviation*2);
 title('Impulse Response Function: CPI')
 xlabel('Time period')
 ylabel('Effect')
+legend('Upper Bound','Point Estimate','Lower Bound')
+yline(0,'--black','HandleVisibility','off')
 
-%Now let's calculate optimal number of factors
-n_slow_factors=bai_ng_n_factors(slow_moving_variables,10);
-n_fast_factors=bai_ng_n_factors(fast_moving_variables,10);
+for i=0:59
+irf_standard_deviation(i+1)=std(observed_variables_bootstrap_irf(26,(3+8*i)+480*(1:999)));
+end
 
-
-
-%Now let's write the code for the Variance Decomposition
-innovations=E;
-structural_shocks=innovations*inv_H;
-var_shocks=var(structural_shocks);
-
-%let's do regression of selected variables on factors
-ip_total = macro_data(:,1);
-fitlm(table2array(macro_factors(:,1:4)), table2array(ip_total))
-
-capacity_util =macro_data(:,16);
-fitlm(table2array(macro_factors(:,1:4)), table2array(capacity_util))
-
-employed_total =macro_data(:,21);
-fitlm(table2array(macro_factors(:,1:4)), table2array(employed_total))
-
-manu_sales =macro_data(:,42);
-fitlm(table2array(macro_factors(:,1:4)), table2array(manu_sales))
-
-new_house_started =macro_data(:,45);
-fitlm(table2array(macro_factors(:,1:4)), table2array(new_house_started))
-
-fx_dollar_pound =macro_data(:,50);
-fitlm(table2array(macro_factors(:,1:4)), table2array(fx_dollar_pound))
-
-aaa_bond =macro_data(:,51);
-fitlm(table2array(macro_factors(:,1:4)), table2array(aaa_bond))
-
-m1 =macro_data(:,53);
-fitlm(table2array(macro_factors(:,1:4)), table2array(m1))
-
-cpi =macro_data(:,61);
-fitlm(table2array(macro_factors(:,1:4)), table2array(cpi))
-
-%Let's do chow test
-break_date_filter=factors.Var1>datetime( 2007, 8,1);
-factors_prior=factors(~break_date_filter,:);
-factors_post=factors(break_date_filter,:);
-
-number_of_factors = size(factors_prior,2);
-lag_order = 12;
-Mdl_prior = varm(number_of_factors,lag_order);
-%EstMdl = estimate(Mdl,table2array(factors),X=double([dummy1 dummy2]));
-EstMdl_prior = estimate(Mdl_prior,factors_prior);
-var_prior_summary=summarize(EstMdl_prior)
-
-number_of_factors = size(factors_prior,2);
-lag_order = 12;
-Mdl_post = varm(number_of_factors,lag_order);
-%EstMdl = estimate(Mdl,table2array(factors),X=double([dummy1 dummy2]));
-EstMdl_post = estimate(Mdl_post,factors_post);
-var_post_summary=summarize(EstMdl_post)
-
-lr_chow=2*(var_prior_summary.LogLikelihood+var_post_summary.LogLikelihood- ...
-    var_summary.LogLikelihood);
-df=var_prior_summary.NumEstimatedParameters+var_post_summary.NumEstimatedParameters-...
-var_summary.NumEstimatedParameters;
-alpha=0.05;
-chi2inv(alpha,df)
+plot(0.25*observed_variables_irf(26,3+(8*(0:59))));
+hold on
+plot(0.25*observed_variables_irf(26,3+(8*(0:59)))+0.25*irf_standard_deviation*2);
+hold on
+plot(0.25*observed_variables_irf(26,3+(8*(0:59)))-0.25*irf_standard_deviation*2);
+title('Impulse Response Function: Long-term Unemployment')
+xlabel('Time period')
+ylabel('Effect')
+legend('Upper Bound','Point Estimate','Lower Bound')
+yline(0,'--black','HandleVisibility','off')

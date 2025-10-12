@@ -30,8 +30,14 @@ library(doFuture)
 library(tidyquant)
 library(tidyverse)
 library(timetk)
+library(fredr)
+#bla
 
-ip_total<-getSymbols('INDPRO',src='FRED')
+setwd("C://Users//Italo//OneDrive//Documents//PhD//PhD//First")
+
+options(download.file.method = "libcurl")
+ip_total <- getSymbols("INDPRO", src = "FRED", auto.assign = FALSE)
+
 ip_total<-INDPRO
 
 ip_final_nonind<-getSymbols('IPFPNSS',src='FRED')
@@ -661,4 +667,81 @@ federal_surplus<-MTSDS133FMS
 index(federal_surplus)<-as.yearmon(index(federal_surplus))
 data<-merge(data,federal_surplus)
 colnames(data)[ncol(data)]<- "Federal Surplus or Deficit [-]"
+data%>%tail(20)
+
+#New
+avg_hour_earn_production_and_nonsupervisory <- getSymbols('AHETPI',src='FRED')
+avg_hour_earn_production_and_nonsupervisory<-AHETPI
+index(avg_hour_earn_production_and_nonsupervisory)<-as.yearmon(index(avg_hour_earn_production_and_nonsupervisory))
+data<-merge(data,avg_hour_earn_production_and_nonsupervisory)
+colnames(data)[ncol(data)]<- "Average Hourly Earnings of Production and Nonsupervisory Employees, Total Private"
+data%>%tail(20)
+
+
+avg_hour_earn_production_and_nonsupervisory_manu <- getSymbols('CES3000000008',src='FRED')
+avg_hour_earn_production_and_nonsupervisory_manu<-CES3000000008
+index(avg_hour_earn_production_and_nonsupervisory_manu)<-as.yearmon(index(avg_hour_earn_production_and_nonsupervisory_manu))
+data<-merge(data,avg_hour_earn_production_and_nonsupervisory_manu)
+colnames(data)[ncol(data)]<- "Average Hourly Earnings of Production and Nonsupervisory Employees, Manufacturing"
+data%>%tail(20)
+
+
+avg_hour_earn_production_and_nonsupervisory_durables <- getSymbols('CES3100000008',src='FRED')
+avg_hour_earn_production_and_nonsupervisory_durables<-CES3100000008
+index(avg_hour_earn_production_and_nonsupervisory_durables)<-as.yearmon(index(avg_hour_earn_production_and_nonsupervisory_durables))
+data<-merge(data,avg_hour_earn_production_and_nonsupervisory_durables)
+colnames(data)[ncol(data)]<- "Average Hourly Earnings of Production and Nonsupervisory Employees, Durable Goods"
+data%>%tail(20)
+
+
+avg_hour_earn_production_and_nonsupervisory_construction <- getSymbols('CES2000000008',src='FRED')
+avg_hour_earn_production_and_nonsupervisory_construction<-CES2000000008
+index(avg_hour_earn_production_and_nonsupervisory_construction)<-as.yearmon(index(avg_hour_earn_production_and_nonsupervisory_construction))
+data<-merge(data,avg_hour_earn_production_and_nonsupervisory_construction)
+colnames(data)[ncol(data)]<- "Average Hourly Earnings of Production and Nonsupervisory Employees, Construction"
+data%>%tail(20)
+
+
+# consumer_credit <- getSymbols('TOTALSL',src='FRED')
+# consumer_credit<-TOTALSL
+# index(consumer_credit)<-as.yearmon(index(consumer_credit))
+# data<-merge(data,consumer_credit)
+# colnames(data)[ncol(data)]<- "Total Consumer Credit Owned and Securitized"
+# data%>%tail(20)
+
+
+
+
+# rate_credit_card <- getSymbols('TERMCBCCALLNS',src='FRED')
+# rate_credit_card<-TERMCBCCALLNS
+# index(rate_credit_card)<-as.yearmon(index(rate_credit_card))
+# data<-merge(data,rate_credit_card)
+# colnames(data)[ncol(data)]<- "Commercial Bank Interest Rate on Credit Card Plans, All Accounts"
+# data%>%tail(20)
+# 
+# 
+rate_3_month_cd <- getSymbols('IR3TCD01USM156N',src='FRED')
+rate_3_month_cd<-IR3TCD01USM156N
+index(rate_3_month_cd)<-as.yearmon(index(rate_3_month_cd))
+rate_3_month_cd <- na.approx(rate_3_month_cd)
+data<-merge(data,rate_3_month_cd)
+colnames(data)[ncol(data)]<- "Interest Rates: 3-Month or 90-Day Rates and Yields: Certificates of Deposit: Total for United States"
+data%>%tail(20)
+
+
+rate_personal_loans_24_months <- getSymbols('TERMCBPER24NS',src='FRED')
+rate_personal_loans_24_months<-TERMCBPER24NS
+index(rate_personal_loans_24_months)<-as.yearmon(index(rate_personal_loans_24_months))
+rate_personal_loans_24_months <- na.approx(rate_personal_loans_24_months)
+data<-merge(data,rate_personal_loans_24_months)
+colnames(data)[ncol(data)]<- "Finance Rate on Personal Loans at Commercial Banks, 24 Month Loan"
+data%>%tail(20)
+
+
+unemployment_rate <- getSymbols('UNRATE',src='FRED')
+unemployment_rate<-UNRATE
+index(unemployment_rate)<-as.yearmon(index(unemployment_rate))
+unemployment_rate <- na.approx(unemployment_rate)
+data<-merge(data,unemployment_rate)
+colnames(data)[ncol(data)]<- "Unemployment Rate"
 data%>%tail(20)

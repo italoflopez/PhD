@@ -1,1 +1,6 @@
-first_paper.mat
+# Ignore everything
+*
+
+# But keep .mat and .R files
+!*.m
+!*.R
