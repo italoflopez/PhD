@@ -111,6 +111,24 @@ new_fast_variables <- merge(sector_sp500,vix)
 
 
 #Droppping NAs
-new_fast_variables <- new_fast_variables%>%na.omit()
+# new_fast_variables <- new_fast_variables%>%na.omit()
 
-write.csv(as.data.frame(new_fast_variables),"new_fast_variables.csv")
+# write.csv(as.data.frame(new_fast_variables),"new_fast_variables.csv")
+
+
+new_fast_variables <- tibble(
+  date = index(new_fast_variables)%>%as.Date()
+) |> 
+  bind_cols(as_tibble(coredata(new_fast_variables)))
+
+data_long_new_fast_variables <- new_fast_variables %>%
+  pivot_longer(
+    cols = -date, 
+    names_to = "variable", 
+    values_to = "value"
+  )
+
+data_long_new_fast_variables <-data_long_new_fast_variables[complete.cases(data_long_new_fast_variables),]
+
+
+data_long_new_fast_variables$value <- data_long_new_fast_variables$value%>%as.numeric()

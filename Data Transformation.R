@@ -56,7 +56,7 @@ ncol(data_updated)
 
 data_updated <- data_updated[complete.cases(data_updated),]
 
-data_updated <-data_updated%>%as.zoo()
+data_updated <- zoo(data_updated%>%select(-date), order.by = data_updated$date)
 
 data_updated%>%tail(30)
 ncol(data_updated)
@@ -1643,7 +1643,7 @@ index(data_stationary)<-as.Date(index(data_stationary))
 # 
 setwd("C://Users//Italo//Documents//PhD//PhD//First")
 # 
-write.csv(as.data.frame(data_stationary),"stationary_data_for_macro_factors_4.csv")
+# write.csv(as.data.frame(data_stationary),"stationary_data_for_macro_factors_4.csv")
 # index(ffr)<-as.Date(index(ffr))
 
 #write.csv(as.data.frame(ffr),"ffr.csv")

@@ -14,6 +14,7 @@ library(plotly)
 library(quantmod)
 library(sarima)
 library(pracma)
+library(fredr)
 
 
 # Time Series ML
@@ -38,6 +39,11 @@ library(readxl)
 library(lubridate)
 
 setwd("C://Users//Italo//OneDrive//Documents//PhD//PhD//First")
+
+
+fredr_set_key("233ade3cce49bb63a9fd83f4fb88bec7")
+
+
 
 source("C://Users//Italo//OneDrive//Documents//PhD//PhD//First//plotly_simple.R")
 
@@ -111,13 +117,13 @@ ppi_natural_gas <- zoo(ppi_natural_gas$`7.4000000000000004`, order.by = ppi_natu
 
 
 
-cpi<-getSymbols('CPIAUCSL',src='FRED')
+cpi<-fredr('CPIAUCSL')
 
-cpi<-CPIAUCSL
+cpi<-cpi%>%select(date,value)
 
 cpi%>%str()
 
-cpi <- zoo(cpi%>%coredata(), order.by = cpi%>%index()%>%as.POSIXct())
+cpi <- zoo(cpi$value, order.by = cpi$date%>%as.POSIXct())
 
 ppi_natural_gas_real <- ppi_natural_gas/cpi
 
@@ -233,17 +239,22 @@ gs10_monthly <- zoo(df_monthly$Value, df_monthly$Month%>%as.POSIXct())
 
 
 
-baa_bond_yield<-getSymbols('DBAA',src='FRED')
+baa_bond_yield<-fredr('DBAA')
 
-baa_bond_yield<-DBAA
+baa_bond_yield<-baa_bond_yield%>%select(date,value)
 
-baa_bond_yield<-aggregate(baa_bond_yield,as.yearmon,mean,
-                          na.rm=T)
-index(baa_bond_yield)<-as.yearmon(index(baa_bond_yield))
+
+baa_bond_yield <- baa_bond_yield %>%
+  mutate(year_month = floor_date(date, 'month')) %>%
+  group_by(year_month) %>%
+  summarise(value = mean(value, na.rm = FALSE)) %>%
+  mutate(date = as.Date(year_month)) %>%
+  select(date, value)
+
 
 baa_bond_yield%>%str()
 
-baa_bond_yield <- zoo(baa_bond_yield%>%coredata(), order.by = baa_bond_yield%>%index()%>%as.POSIXct())
+baa_bond_yield <- zoo(baa_bond_yield$value, order.by = baa_bond_yield$date%>%as.POSIXct())
 
 baa_minus_gs10 <- baa_bond_yield-gs10_monthly
 
@@ -279,3 +290,17 @@ data_stock_and_watson <- merge(data_stock_and_watson,mortgage_30_minus_gs10)
 
 colnames(data_stock_and_watson)[ncol(data_stock_and_watson)] <- "30-year US Mortgage Rate bond minus GS10"
 
+
+data_stock_and_watson <- tibble(
+  date = index(data_stock_and_watson)%>%as.Date()
+) |> 
+  bind_cols(as_tibble(coredata(data_stock_and_watson)))
+
+data_long_stock_and_watson <- data_stock_and_watson %>%
+  pivot_longer(
+    cols = -date, 
+    names_to = "variable", 
+    values_to = "value"
+  )
+
+data_long_stock_and_watson <-data_long_stock_and_watson[complete.cases(data_long_stock_and_watson),]
